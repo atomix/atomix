@@ -49,71 +49,23 @@ jobs:
       - name: Setup Go
         uses: ./.github/actions/setup-go
 
-      - name: Build controller prerelease
-        env:
-          TAGS: ${{ format('latest,v{0}', needs.parse-and-validate-version.outputs.prerelease-version) }}
-        run: make controller
+      - name: Make
+        run: make
         working-directory: stores/raft
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
 
-      - name: Build controller release
-        env:
-          TAGS: ${{ format('stable,latest,v{0},v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
-        run: make controller
-        working-directory: stores/raft
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+      - name: Build and push atomix/raft-controller
+        uses: docker/build-push-action@v3
+        with:
+          context: stores/raft/build/controller
+          tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/raft-controller:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/raft-controller:latest,atomix/raft-controller:v{0},atomix/raft-controller:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
+          push: true
 
-      - name: Push atomix/raft-controller prerelease
-        run: docker push atomix/raft-controller:v${{ needs.parse-and-validate-version.outputs.prerelease-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
-
-      - name: Push atomix/raft-controller minor
-        run: docker push atomix/raft-controller:v${{ needs.parse-and-validate-version.outputs.minor-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/raft-controller patch
-        run: docker push atomix/raft-controller:v${{ needs.parse-and-validate-version.outputs.patch-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/raft-controller stable
-        run: docker push atomix/raft-controller:stable
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/raft-controller latest
-        run: docker push atomix/raft-controller:latest
-
-      - name: Build node prerelease
-        env:
-          TAGS: ${{ format('latest,v{0}', needs.parse-and-validate-version.outputs.prerelease-version) }}
-        run: make node
-        working-directory: stores/raft
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
-
-      - name: Build node release
-        env:
-          TAGS: ${{ format('stable,latest,v{0},v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
-        run: make node
-        working-directory: stores/raft
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/raft-node prerelease
-        run: docker push atomix/raft-node:v${{ needs.parse-and-validate-version.outputs.prerelease-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
-
-      - name: Push atomix/raft-node minor
-        run: docker push atomix/raft-node:v${{ needs.parse-and-validate-version.outputs.minor-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/raft-node patch
-        run: docker push atomix/raft-node:v${{ needs.parse-and-validate-version.outputs.patch-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/raft-node stable
-        run: docker push atomix/raft-node:stable
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/raft-node latest
-        run: docker push atomix/raft-node:stable
+      - name: Build and push atomix/raft-node
+        uses: docker/build-push-action@v3
+        with:
+          context: stores/raft/build/node
+          tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/raft-node:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/raft-node:latest,atomix/raft-node:v{0},atomix/raft-node:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
+          push: true
 
   package-and-release:
     runs-on: ubuntu-latest

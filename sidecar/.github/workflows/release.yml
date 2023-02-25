@@ -46,71 +46,24 @@ jobs:
       - name: Setup Go
         uses: ./.github/actions/setup-go
 
-      - name: Build controller prerelease
-        env:
-          TAGS: ${{ format('latest,v{0}', needs.parse-and-validate-version.outputs.prerelease-version) }}
-        run: make controller
-        working-directory: controller
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
+      - name: Make
+        run: make
+        working-directory: sidecar
 
-      - name: Build controller release
-        env:
-          TAGS: ${{ format('stable,latest,v{0},v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
-        run: make controller
-        working-directory: controller
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+      - name: Build and push atomix/sidecar-controller
+        uses: docker/build-push-action@v3
+        with:
+          context: sidecar/build/controller
+          tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/sidecar-controller:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/sidecar-controller:latest,atomix/sidecar-controller:v{0},atomix/sidecar-controller:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
+          push: true
 
-      - name: Push atomix/sidecar-controller prerelease
-        run: docker push atomix/sidecar-controller:v${{ needs.parse-and-validate-version.outputs.prerelease-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
-
-      - name: Push atomix/sidecar-controller minor
-        run: docker push atomix/sidecar-controller:v${{ needs.parse-and-validate-version.outputs.minor-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/sidecar-controller patch
-        run: docker push atomix/sidecar-controller:v${{ needs.parse-and-validate-version.outputs.patch-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/sidecar-controller stable
-        run: docker push atomix/sidecar-controller:stable
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/sidecar-controller latest
-        run: docker push atomix/sidecar-controller:latest
-
-      - name: Build sidecar prerelease
-        env:
-          TAGS: ${{ format('latest,v{0}', needs.parse-and-validate-version.outputs.prerelease-version) }}
-        run: make sidecar
-        working-directory: controller
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
-
-      - name: Build sidecar release
-        env:
-          TAGS: ${{ format('stable,latest,v{0},v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
-        run: make sidecar
-        working-directory: controller
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/sidecar prerelease
-        run: docker push atomix/sidecar:v${{ needs.parse-and-validate-version.outputs.prerelease-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
-
-      - name: Push atomix/sidecar minor
-        run: docker push atomix/sidecar:v${{ needs.parse-and-validate-version.outputs.minor-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/sidecar patch
-        run: docker push atomix/sidecar:v${{ needs.parse-and-validate-version.outputs.patch-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/sidecar stable
-        run: docker push atomix/sidecar:stable
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/sidecar latest
-        run: docker push atomix/sidecar:stable
+      - name: Build and push atomix/sidecar
+        uses: docker/build-push-action@v3
+        with:
+          context: sidecar
+          file: build/sidecar/Dockerfile
+          tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/sidecar:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/sidecar:latest,atomix/sidecar:v{0},atomix/sidecar:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
+          push: true
 
   package-and-release:
     runs-on: ubuntu-latest

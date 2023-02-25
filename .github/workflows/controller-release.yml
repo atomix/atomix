@@ -49,71 +49,23 @@ jobs:
       - name: Setup Go
         uses: ./.github/actions/setup-go
 
-      - name: Build controller prerelease
-        env:
-          TAGS: ${{ format('latest,v{0}', needs.parse-and-validate-version.outputs.prerelease-version) }}
-        run: make controller
+      - name: Make
+        run: make
         working-directory: controller
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
 
-      - name: Build controller release
-        env:
-          TAGS: ${{ format('stable,latest,v{0},v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
-        run: make controller
-        working-directory: controller
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+      - name: Build and push atomix/controller
+        uses: docker/build-push-action@v3
+        with:
+          context: controller/build/controller
+          tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/controller:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/controller:latest,atomix/controller:v{0},atomix/controller:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
+          push: true
 
-      - name: Push atomix/controller prerelease
-        run: docker push atomix/controller:v${{ needs.parse-and-validate-version.outputs.prerelease-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
-
-      - name: Push atomix/controller minor
-        run: docker push atomix/controller:v${{ needs.parse-and-validate-version.outputs.minor-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/controller patch
-        run: docker push atomix/controller:v${{ needs.parse-and-validate-version.outputs.patch-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/controller stable
-        run: docker push atomix/controller:stable
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/controller latest
-        run: docker push atomix/controller:latest
-
-      - name: Build controller-init prerelease
-        env:
-          TAGS: ${{ format('latest,v{0}', needs.parse-and-validate-version.outputs.prerelease-version) }}
-        run: make controller-init
-        working-directory: controller
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
-
-      - name: Build controller-init release
-        env:
-          TAGS: ${{ format('stable,latest,v{0},v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
-        run: make controller-init
-        working-directory: controller
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/controller-init prerelease
-        run: docker push atomix/controller-init:v${{ needs.parse-and-validate-version.outputs.prerelease-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
-
-      - name: Push atomix/controller-init minor
-        run: docker push atomix/controller-init:v${{ needs.parse-and-validate-version.outputs.minor-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/controller-init patch
-        run: docker push atomix/controller-init:v${{ needs.parse-and-validate-version.outputs.patch-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/controller-init stable
-        run: docker push atomix/controller-init:stable
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/controller-init latest
-        run: docker push atomix/controller-init:stable
+      - name: Build and push atomix/controller-init
+        uses: docker/build-push-action@v3
+        with:
+          context: controller/build/controller-init
+          tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/controller-init:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/controller-init:latest,atomix/controller-init:v{0},atomix/controller-init:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
+          push: true
 
   package-and-release:
     runs-on: ubuntu-latest

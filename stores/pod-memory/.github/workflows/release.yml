@@ -46,38 +46,16 @@ jobs:
       - name: Setup Go
         uses: ./.github/actions/setup-go
 
-      - name: Build controller prerelease
-        env:
-          TAGS: ${{ format('latest,v{0}', needs.parse-and-validate-version.outputs.prerelease-version) }}
-        run: make controller
+      - name: Make
+        run: make
         working-directory: stores/pod-memory
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
 
-      - name: Build controller release
-        env:
-          TAGS: ${{ format('stable,latest,v{0},v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
-        run: make controller
-        working-directory: stores/pod-memory
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/pod-memory-controller prerelease
-        run: docker push atomix/pod-memory-controller:v${{ needs.parse-and-validate-version.outputs.prerelease-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
-
-      - name: Push atomix/pod-memory-controller minor
-        run: docker push atomix/pod-memory-controller:v${{ needs.parse-and-validate-version.outputs.minor-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/pod-memory-controller patch
-        run: docker push atomix/pod-memory-controller:v${{ needs.parse-and-validate-version.outputs.patch-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/pod-memory-controller stable
-        run: docker push atomix/pod-memory-controller:stable
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/pod-memory-controller latest
-        run: docker push atomix/pod-memory-controller:latest
+      - name: Build and push atomix/pod-memory-controller
+        uses: docker/build-push-action@v3
+        with:
+          context: stores/pod-memory/build/controller
+          tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/pod-memory-controller:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/pod-memory-controller:latest,atomix/pod-memory-controller:v{0},atomix/pod-memory-controller:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
+          push: true
 
   package-and-release:
     runs-on: ubuntu-latest

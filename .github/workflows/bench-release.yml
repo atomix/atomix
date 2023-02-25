@@ -49,35 +49,13 @@ jobs:
       - name: Setup Go
         uses: ./.github/actions/setup-go
 
-      - name: Build bench prerelease
-        env:
-          TAGS: ${{ format('latest,v{0}', needs.parse-and-validate-version.outputs.prerelease-version) }}
+      - name: Make
         run: make
         working-directory: bench
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
 
-      - name: Build bench release
-        env:
-          TAGS: ${{ format('stable,latest,v{0},v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
-        run: make
-        working-directory: bench
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/bench prerelease
-        run: docker push atomix/bench:v${{ needs.parse-and-validate-version.outputs.prerelease-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
-
-      - name: Push atomix/bench minor
-        run: docker push atomix/bench:v${{ needs.parse-and-validate-version.outputs.minor-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/bench patch
-        run: docker push atomix/bench:v${{ needs.parse-and-validate-version.outputs.patch-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/bench stable
-        run: docker push atomix/bench:stable
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/bench latest
-        run: docker push atomix/bench:latest
+      - name: Build and push atomix/bench
+        uses: docker/build-push-action@v3
+        with:
+          context: bench/build
+          tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/bench:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/bench:latest,atomix/bench:v{0},atomix/bench:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
+          push: true

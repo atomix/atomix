@@ -46,35 +46,13 @@ jobs:
       - name: Setup Go
         uses: ./.github/actions/setup-go
 
-      - name: Build test prerelease
-        env:
-          TAGS: ${{ format('latest,v{0}', needs.parse-and-validate-version.outputs.prerelease-version) }}
+      - name: Make
         run: make
         working-directory: test
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
 
-      - name: Build test release
-        env:
-          TAGS: ${{ format('stable,latest,v{0},v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
-        run: make
-        working-directory: test
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/test prerelease
-        run: docker push atomix/test:v${{ needs.parse-and-validate-version.outputs.prerelease-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
-
-      - name: Push atomix/test minor
-        run: docker push atomix/test:v${{ needs.parse-and-validate-version.outputs.minor-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/test patch
-        run: docker push atomix/test:v${{ needs.parse-and-validate-version.outputs.patch-version }}
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/test stable
-        run: docker push atomix/test:stable
-        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
-
-      - name: Push atomix/test latest
-        run: docker push atomix/test:latest
+      - name: Build and push atomix/test
+        uses: docker/build-push-action@v3
+        with:
+          context: test/build
+          tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/test:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/test:latest,atomix/test:v{0},atomix/test:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
+          push: true
