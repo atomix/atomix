@@ -35,8 +35,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Test atomix.io/raft@v1
+      - name: Run unit tests
         uses: ./.github/actions/go/test
         with:
           component: drivers/raft
           package: github.com/atomix/atomix/drivers/raft/v1/driver/...
+
+      - name: Run integration tests
+        uses: ./.github/actions/driver/test
+        with:
+          driver: raft
+          version: v1
