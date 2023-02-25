@@ -46,7 +46,7 @@ runs:
 
     - name: Load Docker image
       shell: bash
-      run: kind load docker-image atomix/sidecar:${{ inputs.driver }}-${{ inputs.version }}
+      run: kind load docker-image atomix/sidecar:${{ inputs.driver }}-${{ inputs.version }} --name chart-testing
 
     - name: Install Atomix
       shell: bash
