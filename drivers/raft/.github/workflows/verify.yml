@@ -19,13 +19,13 @@ on:
 
 jobs:
   test:
-    uses: ./.github/common/test.yml
+    uses: ./.github/common/test.yml@${{ github.sha }}
     with:
       component: drivers/raft
       package: github.com/atomix/atomix/drivers/raft/v1/...
 
   lint:
-    uses: ./.github/common/lint.yml
+    uses: ./.github/common/lint.yml@${{ github.sha }}
     with:
       component: drivers/raft
 

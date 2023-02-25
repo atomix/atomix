@@ -19,12 +19,12 @@ on:
 
 jobs:
   test:
-    uses: ./.github/common/test.yml
+    uses: ./.github/common/test.yml@${{ github.sha }}
     with:
       component: stores/raft
 
   lint:
-    uses: ./.github/common/lint.yml
+    uses: ./.github/common/lint.yml@${{ github.sha }}
     with:
       component: stores/raft
       chart: chart
