@@ -22,13 +22,13 @@ on:
 
 jobs:
   test:
-    uses: ./.github/common/test.yml@${{ github.sha }}
+    uses: ./.github/common/test.yml@2fc73232fa34fe90e321207ed2ebce22327245c9
     with:
       component: drivers/raft
       package: github.com/atomix/atomix/drivers/raft/v1/...
 
   lint:
-    uses: ./.github/common/lint.yml@${{ github.sha }}
+    uses: ./.github/common/lint.yml@2fc73232fa34fe90e321207ed2ebce22327245c9
     with:
       component: drivers/raft
 
