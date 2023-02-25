@@ -36,6 +36,9 @@ jobs:
       - test
       - lint
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Setup test environment
         uses: ./.github/actions/setup-helm
 

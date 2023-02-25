@@ -31,6 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: parse-and-validate-version
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Setup Docker
         uses: ./.github/actions/setup-docker
         with:
