@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Verify pod-memory Store
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'actions'
+    paths:
+      - 'stores/pod-memory/**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+    with:
+      component: stores/pod-memory
+
+  lint:
+    uses: ./.github/workflows/lint.yml
+    with:
+      component: stores/pod-memory
+      chart: chart

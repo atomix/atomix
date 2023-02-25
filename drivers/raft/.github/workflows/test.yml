@@ -24,11 +24,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup test environment
+      - name: Setup Helm
         uses: ./.github/actions/setup-helm
 
       - name: Create kind cluster
         uses: helm/kind-action@v1.4.0
+        with:
+          cluster_name: test
 
       - name: Build atomix/sidecar
         uses: docker/build-push-action@v3
@@ -76,7 +78,7 @@ jobs:
           push: false
 
       - name: Load images
-        run: kind load docker-image atomix/sidecar atomix/controller atomix/controller-init atomix/raft-controller atomix/raft-node
+        run: kind load docker-image atomix/sidecar atomix/controller atomix/controller-init atomix/raft-controller atomix/raft-node --name test
 
       - name: Install core controller
         run: helm install -n kube-system atomix-controller ./controller/chart --wait
