@@ -44,7 +44,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: cli
-          file: build/Dockerfile
+          file: cli/build/Dockerfile
           load: true
           push: false
 
