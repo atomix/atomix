@@ -54,4 +54,4 @@ runs:
 
     - name: Run tests
       shell: bash
-      run: ct install --chart-dirs drivers/${{ inputs.driver }}/test --charts drivers/${{ inputs.driver }}/test --helm-extra-set-args "--set image.tag=${{ inputs.driver }}-${{ inputs.version }} --set image.pullPolicy=Never"
+      run: ct install --chart-dirs drivers/${{ inputs.driver }}/test --charts drivers/${{ inputs.driver }}/test --helm-extra-set-args "--set sidecar.image.tag=${{ inputs.driver }}-${{ inputs.version }} --set sidecar.image.pullPolicy=Never"
