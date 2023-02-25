@@ -19,13 +19,13 @@ on:
 
 jobs:
   test:
-    uses: ./.github/workflows/test.yml@0e2079d35f1781d795bc892dc683e4b4bbdf7cec
+    uses: ./.github/workflows/test.yml
     with:
       component: drivers/raft
       package: github.com/atomix/atomix/drivers/raft/v1/...
 
   lint:
-    uses: ./.github/workflows/lint.yml@0e2079d35f1781d795bc892dc683e4b4bbdf7cec
+    uses: ./.github/workflows/lint.yml
     with:
       component: drivers/raft
 
