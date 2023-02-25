@@ -164,5 +164,8 @@ jobs:
       - name: Install tests
         run: helm install test ./test/chart -f drivers/shared-memory/test/suite.yaml --wait
 
-      - name: Run tests
-        run: helm test test
+      - name: Test Counter/v1
+        run: helm test test --filter name=test-counter-v1
+
+      - name: Test Map/v1
+        run: helm test test --filter name=test-map-v1

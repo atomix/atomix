@@ -5,9 +5,8 @@
 tests:
   - kind: Counter
     apiVersion: v1
-    name:
-    config: {}
+    name: test-counter-v1
 
   - kind: Map
     apiVersion: v1
-    config: {}
+    name: test-map-v1

@@ -12,9 +12,9 @@ import (
 	"time"
 )
 
-func GetCounterV1Test(name string) func(*testing.T) {
+func GetCounterV1Test(name string, timeout time.Duration) func(*testing.T) {
 	return func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
 		counter, err := atomix.Counter(name).Get(ctx)

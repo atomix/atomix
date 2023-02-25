@@ -58,7 +58,7 @@ jobs:
         run: make
         working-directory: cli
 
-      - name: Build and push atomix/cli
+      - name: Build CLI
         uses: docker/build-push-action@v3
         with:
           context: cli/build

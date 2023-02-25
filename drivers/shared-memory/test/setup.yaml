@@ -7,4 +7,5 @@ kind: SharedMemoryStore
 metadata:
   name: test
 spec:
+  image: atomix/shared-memory-node
   imagePullPolicy: Never

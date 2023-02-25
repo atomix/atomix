@@ -16,9 +16,9 @@ import (
 	"time"
 )
 
-func GetMapV1Test(name string) func(*testing.T) {
+func GetMapV1Test(name string, timeout time.Duration) func(*testing.T) {
 	return func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
 		m, err := atomix.Map[string, string](name).

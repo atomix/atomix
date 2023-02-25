@@ -8,9 +8,8 @@ import (
 	"fmt"
 	"github.com/atomix/atomix/test/internal/tests"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
-	"os"
 	"testing"
+	"time"
 )
 
 func main() {
@@ -23,70 +22,60 @@ func main() {
 func getCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "atomix-test",
+		Args: cobra.ExactArgs(1),
 		RunE: runCommand,
 	}
-	cmd.Flags().StringP("suite", "s", "/etc/atomix/suite.yaml", "the path to the test configuration")
-	_ = cmd.MarkFlagFilename("suite")
+	cmd.Flags().StringP("kind", "k", "", "the primitive kind to test")
+	_ = cmd.MarkFlagRequired("kind")
+	cmd.Flags().StringP("api-version", "v", "v1", "the primitive API version to test")
+	cmd.Flags().DurationP("timeout", "t", 10*time.Minute, "the test timeout")
 	return cmd
 }
 
-func runCommand(cmd *cobra.Command, _ []string) error {
-	configPath, err := cmd.Flags().GetString("config")
+func runCommand(cmd *cobra.Command, args []string) error {
+	name := args[0]
+	kind, err := cmd.Flags().GetString("kind")
 	if err != nil {
 		return err
 	}
-	configBytes, err := os.ReadFile(configPath)
+	apiVersion, err := cmd.Flags().GetString("api-version")
 	if err != nil {
 		return err
 	}
-	var config Config
-	if err := yaml.Unmarshal(configBytes, &config); err != nil {
+	timeout, err := cmd.Flags().GetDuration("timeout")
+	if err != nil {
 		return err
 	}
 
-	var goTests []testing.InternalTest
-	kindCounts := make(map[string]int)
-	for _, test := range config.Tests {
-		name := test.Name
-		if name == "" {
-			kindVersion := fmt.Sprintf("%s_%s", test.Kind, test.APIVersion)
-			kindCounts[kindVersion] = kindCounts[kindVersion] + 1
-			name = fmt.Sprintf("%s_%d", kindVersion, kindCounts[kindVersion])
+	switch kind {
+	case "Counter":
+		switch apiVersion {
+		case "v1":
+			runTest("CounterV1", tests.GetCounterV1Test(name, timeout))
+		default:
+			return fmt.Errorf("unsupported test API version %s", apiVersion)
 		}
-		var testF func(*testing.T)
-		switch test.Kind {
-		case "Counter":
-			switch test.APIVersion {
-			case "v1":
-				testF = tests.GetCounterV1Test(name)
-			default:
-				return fmt.Errorf("unsupported API version %s", test.APIVersion)
-			}
-		case "Map":
-			switch test.APIVersion {
-			case "v1":
-				testF = tests.GetMapV1Test(name)
-			default:
-				return fmt.Errorf("unsupported API version %s", test.APIVersion)
-			}
+	case "Map":
+		switch apiVersion {
+		case "v1":
+			runTest("MapV1", tests.GetMapV1Test(name, timeout))
+		default:
+			return fmt.Errorf("unsupported test API version %s", apiVersion)
 		}
-		goTests = append(goTests, testing.InternalTest{
-			Name: name,
-			F:    testF,
-		})
+	default:
+		return fmt.Errorf("unsupported test kind %s", kind)
 	}
-
-	testing.Main(func(_, _ string) (bool, error) { return true, nil }, goTests, nil, nil)
 	return nil
 }
 
-type Config struct {
-	Tests []TestConfig `yaml:"config"`
-}
-
-type TestConfig struct {
-	Kind       string         `yaml:"kind"`
-	APIVersion string         `yaml:"apiVersion"`
-	Name       string         `yaml:"name"`
-	Config     map[string]any `yaml:"config"`
+func runTest(name string, f func(*testing.T)) {
+	testing.Main(func(_, _ string) (bool, error) { return true, nil }, []testing.InternalTest{
+		{
+			Name: name,
+			F: func(t *testing.T) {
+				t.Logf("Running %s", name)
+				f(t)
+			},
+		},
+	}, nil, nil)
 }
