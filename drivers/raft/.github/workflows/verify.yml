@@ -9,7 +9,6 @@ on:
     branches:
       - 'master'
       - 'actions'
-      - 'test'
     paths:
       - 'controller/**'
       - 'sidecar/**'
@@ -45,7 +44,7 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1.4.0
 
-      - name: Build sidecar
+      - name: Build atomix/sidecar
         uses: docker/build-push-action@v3
         with:
           context: .
@@ -54,16 +53,25 @@ jobs:
           load: true
           push: false
 
-      - name: Build core controller
+      - name: Build atomix/controller
         uses: docker/build-push-action@v3
         with:
           context: controller
-          file: build/Dockerfile
+          file: build/controller/Dockerfile
           tags: atomix/controller
           load: true
           push: false
 
-      - name: Build store controller
+      - name: Build atomix/controller-init
+        uses: docker/build-push-action@v3
+        with:
+          context: controller
+          file: build/controller-init/Dockerfile
+          tags: atomix/controller-init
+          load: true
+          push: false
+
+      - name: Build atomix/raft-controller
         uses: docker/build-push-action@v3
         with:
           context: stores/raft
@@ -72,7 +80,7 @@ jobs:
           load: true
           push: false
 
-      - name: Build store node
+      - name: Build atomix/raft-node
         uses: docker/build-push-action@v3
         with:
           context: stores/raft
@@ -82,7 +90,7 @@ jobs:
           push: false
 
       - name: Load images
-        run: kind load docker-image atomix/sidecar atomix/controller atomix/raft-controller atomix/raft-node
+        run: kind load docker-image atomix/sidecar atomix/controller atomix/controller-init atomix/raft-controller atomix/raft-node
 
       - name: Install core controller
         run: helm install -n kube-system atomix-controller ./controller/chart --wait
