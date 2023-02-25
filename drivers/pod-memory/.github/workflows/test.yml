@@ -34,6 +34,11 @@ jobs:
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
 
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.4.0
+        with:
+          cluster_name: test
+
       - name: Build sidecar
         run: docker build . -t atomix/sidecar -f drivers/pod-memory/test/Dockerfile
 
@@ -48,11 +53,6 @@ jobs:
       - name: Build store
         run: make
         working-directory: stores/pod-memory
-
-      - name: Create kind cluster
-        uses: helm/kind-action@v1.4.0
-        with:
-          cluster_name: test
 
       - name: Load images
         run: kind load docker-image atomix/controller atomix/controller-init atomix/sidecar atomix/sidecar-controller atomix/pod-memory-controller --name test
