@@ -10,8 +10,8 @@ on:
       - 'stores/pod-memory/v*'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: release
+  cancel-in-progress: false
 
 jobs:
   parse-and-validate-version:
@@ -43,21 +43,41 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push controller
-        uses: docker/build-push-action@v3
-        with:
-          context: stores/pod-memory
-          file: build/controller/Dockerfile
-          tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/pod-memory-controller:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/pod-memory-controller:latest,atomix/pod-memory-controller:v{0},atomix/pod-memory-controller:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
-          push: true
+      - name: Setup Go
+        uses: ./.github/actions/setup-go
 
-      - name: Build and push node
-        uses: docker/build-push-action@v3
-        with:
-          context: stores/pod-memory
-          file: build/node/Dockerfile
-          tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/pod-memory-node:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/pod-memory-node:latest,atomix/pod-memory-node:v{0},atomix/pod-memory-node:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
-          push: true
+      - name: Build controller prerelease
+        env:
+          TAGS: ${{ format('latest,v{0}', needs.parse-and-validate-version.outputs.prerelease-version) }}
+        run: make controller
+        working-directory: stores/pod-memory
+        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
+
+      - name: Build controller release
+        env:
+          TAGS: ${{ format('stable,latest,v{0},v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
+        run: make controller
+        working-directory: stores/pod-memory
+        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+
+      - name: Push atomix/pod-memory-controller prerelease
+        run: docker push atomix/pod-memory-controller:v${{ needs.parse-and-validate-version.outputs.prerelease-version }}
+        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
+
+      - name: Push atomix/pod-memory-controller minor
+        run: docker push atomix/pod-memory-controller:v${{ needs.parse-and-validate-version.outputs.minor-version }}
+        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+
+      - name: Push atomix/pod-memory-controller patch
+        run: docker push atomix/pod-memory-controller:v${{ needs.parse-and-validate-version.outputs.patch-version }}
+        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+
+      - name: Push atomix/pod-memory-controller stable
+        run: docker push atomix/pod-memory-controller:stable
+        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+
+      - name: Push atomix/pod-memory-controller latest
+        run: docker push atomix/pod-memory-controller:latest
 
   package-and-release:
     runs-on: ubuntu-latest
@@ -69,11 +89,11 @@ jobs:
         uses: ./.github/actions/setup-helm
 
       - name: Update chart dependencies
-        run: helm dep update stores/pod-memory/chart
+        run: helm dep update ./stores/pod-memory/chart
 
       - name: Package Helm chart
         run: |
-          helm package stores/pod-memory/chart \
+          helm package ./stores/pod-memory/chart \
             --version ${{ needs.parse-and-validate-version.outputs.semantic-version }} \
             --app-version "v${{ needs.parse-and-validate-version.outputs.semantic-version }}" \
             --destination .deploy

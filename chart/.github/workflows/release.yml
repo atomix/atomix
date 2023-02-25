@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Release Atomix chart
+
+on:
+  push:
+    tags:
+      - 'chart/v*'
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  parse-and-validate-version:
+    runs-on: ubuntu-latest
+    outputs:
+      semantic-version: ${{ steps.parse-version.outputs.semantic-version }}
+      prerelease-version: ${{ steps.parse-version.outputs.prerelease-version }}
+      minor-version: ${{ steps.parse-version.outputs.minor-version }}
+      patch-version: ${{ steps.parse-version.outputs.patch-version }}
+    steps:
+      - name: Parse and validate release version
+        id: parse-version
+        uses: ./.github/actions/parse-version
+
+  package-and-release:
+    runs-on: ubuntu-latest
+    needs:
+      - parse-and-validate-version
+    steps:
+      - name: Setup Helm
+        uses: ./.github/actions/setup-helm
+
+      - name: Update chart dependencies
+        run: helm dep update ./chart
+
+      - name: Package Helm chart
+        run: |
+          helm package ./chart \
+            --version ${{ needs.parse-and-validate-version.outputs.semantic-version }} \
+            --app-version "v${{ needs.parse-and-validate-version.outputs.semantic-version }}" \
+            --destination .deploy
+
+      - name: Publish Helm chart
+        uses: helm/chart-releaser-action@v1.5.0
+        with:
+          skip_packaging: true
+        env:
+          CR_TOKEN: "${{ github.token }}"
+          CR_PACKAGE_PATH: .deploy
+          CR_SKIP_EXISTING: true

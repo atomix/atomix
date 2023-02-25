@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Verify API
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'actions'
+    paths:
+      - 'api/**'
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+    with:
+      component: api
+
+  lint:
+    uses: ./.github/workflows/lint.yml
+    with:
+      component: api

@@ -13,8 +13,8 @@ on:
       - 'stores/shared-memory/v*'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: release
+  cancel-in-progress: false
 
 jobs:
   parse-and-validate-version:
@@ -46,21 +46,74 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push controller
-        uses: docker/build-push-action@v3
-        with:
-          context: stores/shared-memory
-          file: build/controller/Dockerfile
-          tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/shared-memory-controller:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/shared-memory-controller:latest,atomix/shared-memory-controller:v{0},atomix/shared-memory-controller:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
-          push: true
+      - name: Setup Go
+        uses: ./.github/actions/setup-go
 
-      - name: Build and push node
-        uses: docker/build-push-action@v3
-        with:
-          context: stores/shared-memory
-          file: build/node/Dockerfile
-          tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/shared-memory-node:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/shared-memory-node:latest,atomix/shared-memory-node:v{0},atomix/shared-memory-node:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
-          push: true
+      - name: Build controller prerelease
+        env:
+          TAGS: ${{ format('latest,v{0}', needs.parse-and-validate-version.outputs.prerelease-version) }}
+        run: make controller
+        working-directory: stores/shared-memory
+        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
+
+      - name: Build controller release
+        env:
+          TAGS: ${{ format('stable,latest,v{0},v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
+        run: make controller
+        working-directory: stores/shared-memory
+        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+
+      - name: Push atomix/shared-memory-controller prerelease
+        run: docker push atomix/shared-memory-controller:v${{ needs.parse-and-validate-version.outputs.prerelease-version }}
+        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
+
+      - name: Push atomix/shared-memory-controller minor
+        run: docker push atomix/shared-memory-controller:v${{ needs.parse-and-validate-version.outputs.minor-version }}
+        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+
+      - name: Push atomix/shared-memory-controller patch
+        run: docker push atomix/shared-memory-controller:v${{ needs.parse-and-validate-version.outputs.patch-version }}
+        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+
+      - name: Push atomix/shared-memory-controller stable
+        run: docker push atomix/shared-memory-controller:stable
+        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+
+      - name: Push atomix/shared-memory-controller latest
+        run: docker push atomix/shared-memory-controller:latest
+
+      - name: Build node prerelease
+        env:
+          TAGS: ${{ format('latest,v{0}', needs.parse-and-validate-version.outputs.prerelease-version) }}
+        run: make node
+        working-directory: stores/shared-memory
+        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
+
+      - name: Build node release
+        env:
+          TAGS: ${{ format('stable,latest,v{0},v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
+        run: make node
+        working-directory: stores/shared-memory
+        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+
+      - name: Push atomix/shared-memory-node prerelease
+        run: docker push atomix/shared-memory-node:v${{ needs.parse-and-validate-version.outputs.prerelease-version }}
+        if: needs.parse-and-validate-version.outputs.prerelease-version != ''
+
+      - name: Push atomix/shared-memory-node minor
+        run: docker push atomix/shared-memory-node:v${{ needs.parse-and-validate-version.outputs.minor-version }}
+        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+
+      - name: Push atomix/shared-memory-node patch
+        run: docker push atomix/shared-memory-node:v${{ needs.parse-and-validate-version.outputs.patch-version }}
+        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+
+      - name: Push atomix/shared-memory-node stable
+        run: docker push atomix/shared-memory-node:stable
+        if: needs.parse-and-validate-version.outputs.prerelease-version == ''
+
+      - name: Push atomix/shared-memory-node latest
+        run: docker push atomix/shared-memory-node:stable
 
   package-and-release:
     runs-on: ubuntu-latest
@@ -72,11 +125,11 @@ jobs:
         uses: ./.github/actions/setup-helm
 
       - name: Update chart dependencies
-        run: helm dep update stores/shared-memory/chart
+        run: helm dep update ./stores/shared-memory/chart
 
       - name: Package Helm chart
         run: |
-          helm package stores/shared-memory/chart \
+          helm package ./stores/shared-memory/chart \
             --version ${{ needs.parse-and-validate-version.outputs.semantic-version }} \
             --app-version "v${{ needs.parse-and-validate-version.outputs.semantic-version }}" \
             --destination .deploy

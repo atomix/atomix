@@ -39,6 +39,10 @@ jobs:
         with:
           cluster_name: kind
 
+      - name: Build CLI
+        run: make
+        working-directory: cli
+
       - name: Build sidecar
         run: docker build . -t atomix/sidecar -f drivers/shared-memory/test/Dockerfile && kind load docker-image atomix/sidecar
 
