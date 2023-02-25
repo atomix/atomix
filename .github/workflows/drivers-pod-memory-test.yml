@@ -20,6 +20,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   integration-tests:
     runs-on: ubuntu-latest
@@ -34,15 +38,6 @@ jobs:
         uses: helm/kind-action@v1.4.0
         with:
           cluster_name: test
-
-      - name: Build atomix/sidecar
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          file: drivers/pod-memory/test/Dockerfile
-          tags: atomix/sidecar
-          load: true
-          push: false
 
       - name: Build atomix/controller
         uses: docker/build-push-action@v3
@@ -62,6 +57,24 @@ jobs:
           load: true
           push: false
 
+      - name: Build atomix/sidecar
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: drivers/pod-memory/test/Dockerfile
+          tags: atomix/sidecar
+          load: true
+          push: false
+
+      - name: Build atomix/sidecar-controller
+        uses: docker/build-push-action@v3
+        with:
+          context: sidecar
+          file: sidecar/build/controller/Dockerfile
+          tags: atomix/sidecar-controller
+          load: true
+          push: false
+
       - name: Build atomix/pod-memory-controller
         uses: docker/build-push-action@v3
         with:
@@ -72,10 +85,13 @@ jobs:
           push: false
 
       - name: Load images
-        run: kind load docker-image atomix/sidecar atomix/controller atomix/controller-init atomix/pod-memory-controller --name test
+        run: kind load docker-image atomix/controller atomix/controller-init atomix/sidecar atomix/sidecar-controller atomix/pod-memory-controller --name test
 
       - name: Install core controller
         run: helm install -n kube-system atomix-controller ./controller/chart --wait
+
+      - name: Install sidecar controller
+        run: helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --wait
 
       - name: Install store controller
         run: helm install -n kube-system atomix-pod-memory-controller ./stores/pod-memory/chart --wait

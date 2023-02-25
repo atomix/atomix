@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Test Raft driver
+name: Test raft driver
 
 on:
   push:
@@ -19,6 +19,10 @@ on:
       - 'stores/raft/**'
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   integration-tests:
@@ -35,15 +39,6 @@ jobs:
         with:
           cluster_name: test
 
-      - name: Build atomix/sidecar
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          file: drivers/raft/test/Dockerfile
-          tags: atomix/sidecar
-          load: true
-          push: false
-
       - name: Build atomix/controller
         uses: docker/build-push-action@v3
         with:
@@ -59,6 +54,24 @@ jobs:
           context: controller
           file: controller/build/controller-init/Dockerfile
           tags: atomix/controller-init
+          load: true
+          push: false
+
+      - name: Build atomix/sidecar
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: drivers/raft/test/Dockerfile
+          tags: atomix/sidecar
+          load: true
+          push: false
+
+      - name: Build atomix/sidecar-controller
+        uses: docker/build-push-action@v3
+        with:
+          context: sidecar
+          file: sidecar/build/controller/Dockerfile
+          tags: atomix/sidecar-controller
           load: true
           push: false
 
@@ -81,10 +94,13 @@ jobs:
           push: false
 
       - name: Load images
-        run: kind load docker-image atomix/sidecar atomix/controller atomix/controller-init atomix/raft-controller atomix/raft-node --name test
+        run: kind load docker-image atomix/controller atomix/controller-init atomix/sidecar atomix/sidecar-controller atomix/raft-controller atomix/raft-node --name test
 
       - name: Install core controller
         run: helm install -n kube-system atomix-controller ./controller/chart --wait
+
+      - name: Install sidecar controller
+        run: helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --wait
 
       - name: Install store controller
         run: helm install -n kube-system atomix-raft-controller ./stores/raft/chart --wait

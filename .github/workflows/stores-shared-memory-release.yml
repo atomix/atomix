@@ -12,6 +12,10 @@ on:
     tags:
       - 'stores/shared-memory/v*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   parse-and-validate-version:
     runs-on: ubuntu-latest
