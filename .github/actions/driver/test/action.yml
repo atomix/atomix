@@ -43,10 +43,13 @@ runs:
       uses: helm/kind-action@v1.4.0
 
     - name: Load Docker image
+      shell: bash
       run: kind load docker-image atomix/test:${{ inputs.driver }}-${{ inputs.version }}
 
     - name: Install Atomix
+      shell: bash
       run: helm install -n kube-system atomix atomix/atomix --wait
 
     - name: Run tests
+      shell: bash
       run: ct install --chart-dirs drivers/${{ inputs.driver }}/test --charts drivers/${{ inputs.driver }}/test --helm-extra-set-args "--set image.tag=${{ inputs.driver }}-${{ inputs.version }} --set image.pullPolicy=Never"
