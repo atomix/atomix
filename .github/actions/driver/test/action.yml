@@ -22,8 +22,10 @@ runs:
     - name: Build image
       uses: docker/build-push-action@v3
       with:
+        context: .
         file: drivers/${{ inputs.driver }}/test/Dockerfile
-        tags: atomix/test:${{ inputs.driver }}-${{ inputs.version }}
+        tags: atomix/sidecar:${{ inputs.driver }}-${{ inputs.version }}
+        load: true
         push: false
 
     - name: Set up Helm
@@ -44,7 +46,7 @@ runs:
 
     - name: Load Docker image
       shell: bash
-      run: kind load docker-image atomix/test:${{ inputs.driver }}-${{ inputs.version }}
+      run: kind load docker-image atomix/sidecar:${{ inputs.driver }}-${{ inputs.version }}
 
     - name: Install Atomix
       shell: bash
