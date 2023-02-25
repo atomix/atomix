@@ -40,25 +40,22 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1.4.0
         with:
-          cluster_name: test
+          cluster_name: kind
 
       - name: Build sidecar
-        run: docker build . -t atomix/sidecar -f drivers/raft/test/Dockerfile
+        run: docker build . -t atomix/sidecar -f drivers/raft/test/Dockerfile && kind load docker-image atomix/sidecar
 
       - name: Build controller
-        run: make
+        run: make kind
         working-directory: controller
 
       - name: Build sidecar controller
-        run: make controller
+        run: make controller-kind
         working-directory: sidecar
 
       - name: Build store
-        run: make
+        run: make kind
         working-directory: stores/raft
-
-      - name: Load images
-        run: kind load docker-image atomix/controller atomix/controller-init atomix/sidecar atomix/sidecar-controller atomix/raft-controller atomix/raft-node --name test
 
       - name: Install core controller
         run: helm install -n kube-system atomix-controller ./controller/chart --wait
