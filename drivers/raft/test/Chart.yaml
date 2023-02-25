@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v2
+name: atomix-raft-test
+description: Integration test Helm chart for Atomix Raft driver
+kubeVersion: ">=1.17.0"
+type: application
+version: 2.0.0
+keywords:
+- atomix
+- test
+home: https://atomix.io
+maintainers:
+- name: Jordan Halterman
+  email: jordan.halterman@intel.com
