@@ -6,10 +6,12 @@ on:
   workflow_call:
     inputs:
       component:
+        type: string
         description: "The component to lint"
         required: true
 
       chart:
+        type: string
         description: "The path to the Helm chart relative to the component root"
         required: false
         default: "chart"

@@ -6,10 +6,12 @@ on:
   workflow_call:
     inputs:
       component:
+        type: string
         description: "The component path"
         required: true
 
       package:
+        type: string
         description: "The package to test"
         required: false
         default: ''
