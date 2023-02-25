@@ -9,6 +9,7 @@ on:
     branches:
       - 'master'
       - 'actions'
+      - 'test'
     paths:
       - 'stores/raft/**'
   pull_request:

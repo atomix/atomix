@@ -14,7 +14,6 @@ on:
         type: string
         description: "The path to the Helm chart relative to the component root"
         required: false
-        default: "chart"
 
 jobs:
   lint:
