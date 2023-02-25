@@ -17,7 +17,7 @@ on:
 
 jobs:
   lint:
-    name: Check code quality
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
