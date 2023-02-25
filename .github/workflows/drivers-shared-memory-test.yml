@@ -87,7 +87,7 @@ jobs:
         run: helm install -n kube-system atomix-controller ./controller/chart --wait
 
       - name: Install store controller
-        run: helm install -n kube-system atomix-shared-memory-controller ./store/shared-memory/chart --wait
+        run: helm install -n kube-system atomix-shared-memory-controller ./stores/shared-memory/chart --wait
 
       - name: Run tests
-        run: ct install --charts store/shared-memory/test
+        run: ct install --charts ./store/shared-memory/test

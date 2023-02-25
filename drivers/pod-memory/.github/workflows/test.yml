@@ -75,7 +75,7 @@ jobs:
         run: helm install -n kube-system atomix-controller ./controller/chart --wait
 
       - name: Install store controller
-        run: helm install -n kube-system atomix-pod-memory-controller ./store/pod-memory/chart --wait
+        run: helm install -n kube-system atomix-pod-memory-controller ./stores/pod-memory/chart --wait
 
       - name: Run tests
-        run: ct install --charts store/pod-memory/test
+        run: ct install --charts ./store/pod-memory/test

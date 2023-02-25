@@ -87,7 +87,7 @@ jobs:
         run: helm install -n kube-system atomix-controller ./controller/chart --wait
 
       - name: Install store controller
-        run: helm install -n kube-system atomix-raft-controller ./store/raft/chart --wait
+        run: helm install -n kube-system atomix-raft-controller ./stores/raft/chart --wait
 
       - name: Run tests
-        run: ct install --charts store/raft/test
+        run: ct install --charts ./store/raft/test
