@@ -45,6 +45,7 @@ jobs:
         with:
           context: cli
           file: cli/build/Dockerfile
+          tags: atomix/cli
           load: true
           push: false
 
@@ -55,8 +56,9 @@ jobs:
       - name: Build atomix/sidecar
         uses: docker/build-push-action@v3
         with:
-          context: .
-          file: drivers/shared-memory/test/Dockerfile
+          context: sidecar
+          file: sidecar/build/sidecar/Dockerfile
+          tags: atomix/sidecar
           load: true
           push: false
 
@@ -67,6 +69,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: sidecar/build/controller
+          tags: atomix/sidecar-controller
           load: true
           push: false
 
@@ -81,6 +84,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: controller/build/controller
+          tags: atomix/controller
           load: true
           push: false
 
@@ -91,8 +95,12 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: controller/build/controller-init
+          tags: atomix/controller-init
           load: true
           push: false
+
+      - name: Load atomix/controller-init
+        run: kind load docker-image atomix/controller-init
 
       - name: Load atomix/controller-init
         run: kind load docker-image atomix/controller-init
