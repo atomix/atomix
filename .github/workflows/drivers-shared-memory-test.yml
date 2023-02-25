@@ -13,7 +13,6 @@ on:
       - 'master'
       - 'actions'
     paths:
-      - 'cli/**'
       - 'controller/**'
       - 'sidecar/**'
       - 'drivers/shared-memory/**'
@@ -27,7 +26,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  integration-tests:
+  test-primitives:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -63,6 +62,10 @@ jobs:
         run: make kind
         working-directory: stores/shared-memory
 
+      - name: Build tests
+        run: make kind
+        working-directory: test
+
       - name: Install core controller
         run: helm install -n kube-system atomix-controller ./controller/chart --wait
 
@@ -72,5 +75,11 @@ jobs:
       - name: Install store controller
         run: helm install -n kube-system atomix-shared-memory-controller ./stores/shared-memory/chart --wait
 
+      - name: Setup tests
+        run: kubectl create -f drivers/pod-memory/test/setup.yaml
+
+      - name: Install tests
+        run: helm install test ./test/chart -f drivers/pod-memory/test/suite.yaml --wait
+
       - name: Run tests
-        run: ct install --charts ./drivers/shared-memory/test
+        run: helm test test

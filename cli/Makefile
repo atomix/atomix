@@ -9,8 +9,7 @@ SHELL := /bin/bash
 ifdef TAGS
 BUILD_ARGS := $(shell echo "${TAGS}" | sed 's/,/ -t atomix\/cli:/g' | cat <(echo -n "-t atomix/cli:") -)
 build:
-	GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -o build/atomix ./cmd/atomix
-	docker build ./build ${BUILD_ARGS}
+	docker build . -f ./build/Dockerfile ${BUILD_ARGS}
 
 KIND_ARGS := $(shell echo "${TAGS}" | sed 's/,/ atomix\/cli:/g' | cat <(echo -n "atomix/cli:") -)
 kind:
@@ -21,7 +20,7 @@ endif
 ifndef TAGS
 build:
 	GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -o build/atomix ./cmd/atomix
-	docker build ./build -t atomix/cli
+	docker build . -f ./build/Dockerfile -t atomix/cli
 
 kind:
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi

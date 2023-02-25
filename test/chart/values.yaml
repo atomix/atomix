@@ -2,6 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# A list of tests to run
+# tests:
+#   - kind: <primitive kind>
+#     apiVersion: <primitive API version>
+#     name: <primitive name>
+#     config: <primitive config>
+tests: []
+
 image:
   repository: atomix/test
   tag: ""
@@ -11,20 +19,6 @@ image:
 sidecar:
   image:
     repository: atomix/sidecar
-    tag: ""
-    pullPolicy: ""
-    pullSecrets: []
-
-node:
-  image:
-    repository: atomix/shared-memory-node
-    tag: ""
-    pullPolicy: ""
-    pullSecrets: []
-
-controller:
-  image:
-    repository: atomix/shared-memory-controller
     tag: ""
     pullPolicy: ""
     pullSecrets: []

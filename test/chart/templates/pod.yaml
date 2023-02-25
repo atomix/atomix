@@ -37,4 +37,12 @@ spec:
         - /bin/bash
         - -c
         - atomix-test && pkill atomix-sidecar
+      volumeMounts:
+        - name: config
+          mountPath: /etc/atomix
+          readOnly: true
   restartPolicy: Never
+  volumes:
+    - name: config
+      configMap:
+        name: {{ .Release.Name }}-config

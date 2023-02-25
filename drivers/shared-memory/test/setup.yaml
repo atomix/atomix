@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: sharedmemory.atomix.io/v1beta2
+kind: SharedMemoryStore
+metadata:
+  name: test
+spec:
+  imagePullPolicy: Never

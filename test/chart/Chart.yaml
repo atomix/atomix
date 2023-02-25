@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 apiVersion: v2
-name: atomix-raft-test
-description: Integration test Helm chart for Atomix Raft store
+name: atomix-tests
+description: Integration tests
 kubeVersion: ">=1.17.0"
 type: application
 version: 1.0.0

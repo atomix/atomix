@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: raft.atomix.io/v1beta3
+kind: RaftCluster
+metadata:
+  name: test
+spec:
+  replicas: 3
+  imagePullPolicy: Never
+---
+apiVersion: raft.atomix.io/v1beta3
+kind: RaftStore
+metadata:
+  name: test
+spec:
+  cluster:
+    name: test
+  partitions: 3

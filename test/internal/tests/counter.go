@@ -12,57 +12,59 @@ import (
 	"time"
 )
 
-func TestCounter(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+func GetCounterV1Test(name string) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
 
-	counter, err := atomix.Counter("test-counter").Get(ctx)
-	assert.NoError(t, err)
+		counter, err := atomix.Counter(name).Get(ctx)
+		assert.NoError(t, err)
 
-	value, err := counter.Get(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(0), value)
+		value, err := counter.Get(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), value)
 
-	err = counter.Set(ctx, 1)
-	assert.NoError(t, err)
+		err = counter.Set(ctx, 1)
+		assert.NoError(t, err)
 
-	value, err = counter.Get(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(1), value)
+		value, err = counter.Get(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), value)
 
-	err = counter.Set(ctx, -1)
-	assert.NoError(t, err)
+		err = counter.Set(ctx, -1)
+		assert.NoError(t, err)
 
-	value, err = counter.Get(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(-1), value)
+		value, err = counter.Get(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(-1), value)
 
-	value, err = counter.Increment(ctx, 1)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(0), value)
+		value, err = counter.Increment(ctx, 1)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), value)
 
-	value, err = counter.Decrement(ctx, 10)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(-10), value)
+		value, err = counter.Decrement(ctx, 10)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(-10), value)
 
-	value, err = counter.Get(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(-10), value)
+		value, err = counter.Get(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(-10), value)
 
-	value, err = counter.Increment(ctx, 20)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(10), value)
+		value, err = counter.Increment(ctx, 20)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(10), value)
 
-	err = counter.Close(ctx)
-	assert.NoError(t, err)
+		err = counter.Close(ctx)
+		assert.NoError(t, err)
 
-	counter, err = atomix.Counter("test-counter").Get(ctx)
-	assert.NoError(t, err)
+		counter, err = atomix.Counter(name).Get(ctx)
+		assert.NoError(t, err)
 
-	value, err = counter.Get(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(10), value)
+		value, err = counter.Get(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(10), value)
 
-	err = counter.Close(ctx)
-	assert.NoError(t, err)
+		err = counter.Close(ctx)
+		assert.NoError(t, err)
+	}
 }
