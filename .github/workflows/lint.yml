@@ -34,8 +34,8 @@ jobs:
 
       - name: Setup Helm environment
         uses: ./.github/actions/setup-helm
-        if: inputs.chart != ''
+        if: ${{ inputs.chart != '' }}
 
       - name: Helm lint
         run: ct lint --charts ${{ inputs.component }}/${{ inputs.chart }} --target-branch ${{ github.event.repository.default_branch }} --validate-maintainers=false
-        if: inputs.chart != ''
+        if: ${{ inputs.chart != '' }}
