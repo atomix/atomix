@@ -9,6 +9,7 @@ on:
     branches:
       - 'master'
       - 'actions'
+      - 'test'
     paths:
       - 'controller/**'
       - 'sidecar/**'
