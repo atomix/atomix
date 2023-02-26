@@ -75,4 +75,4 @@ jobs:
         run: |
           echo "kubectl get pods -n kube-system"
           kubectl get pods -n kube-system
-          kubectl logs -n kube-system deployment/atomix-controller
+          kubectl logs -n kube-system deployment/atomix-controller -c atomix-controller-init
