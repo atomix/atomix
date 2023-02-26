@@ -8,7 +8,6 @@ on:
   push:
     branches:
       - 'master'
-      - 'actions'
     paths:
       - 'controller/**'
       - 'sidecar/**'
@@ -211,43 +210,43 @@ jobs:
         with:
           cluster_name: kind
 
-      - name: Download atomix/sidecar
+      - name: Fetch atomix/sidecar
         uses: actions/download-artifact@v3
         with:
           name: sidecar
           path: /tmp
 
-      - name: Download atomix/sidecar-controller
+      - name: Fetch atomix/sidecar-controller
         uses: actions/download-artifact@v3
         with:
           name: sidecar-controller
           path: /tmp
 
-      - name: Download atomix/controller
+      - name: Fetch atomix/controller
         uses: actions/download-artifact@v3
         with:
           name: controller
           path: /tmp
 
-      - name: Download atomix/controller-init
+      - name: Fetch atomix/controller-init
         uses: actions/download-artifact@v3
         with:
           name: controller-init
           path: /tmp
 
-      - name: Download atomix/shared-memory-node
+      - name: Fetch atomix/shared-memory-node
         uses: actions/download-artifact@v3
         with:
           name: shared-memory-node
           path: /tmp
 
-      - name: Download atomix/shared-memory-controller
+      - name: Fetch atomix/shared-memory-controller
         uses: actions/download-artifact@v3
         with:
           name: shared-memory-controller
           path: /tmp
 
-      - name: Download atomix/test
+      - name: Fetch atomix/test
         uses: actions/download-artifact@v3
         with:
           name: test

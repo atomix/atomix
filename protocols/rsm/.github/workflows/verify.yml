@@ -8,7 +8,6 @@ on:
   push:
     branches:
       - 'master'
-      - 'actions'
     paths:
       - 'protocols/rsm/**'
   pull_request:

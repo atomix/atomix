@@ -8,7 +8,6 @@ on:
   push:
     branches:
       - 'master'
-      - 'actions'
     paths:
       - 'controller/**'
   pull_request:
@@ -87,13 +86,13 @@ jobs:
         with:
           cluster_name: kind
 
-      - name: Download atomix/controller
+      - name: Fetch atomix/controller
         uses: actions/download-artifact@v3
         with:
           name: controller
           path: /tmp
 
-      - name: Download atomix/controller-init
+      - name: Fetch atomix/controller-init
         uses: actions/download-artifact@v3
         with:
           name: controller-init
