@@ -73,25 +73,11 @@ jobs:
         id: install-controller
         run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
-      - name: Record k8s status
+      - name: Fetch status
         if: failure()
         run: |
-          echo "kubectl get pods"
-          kubectl get pods
           echo "kubectl get pods -n kube-system"
           kubectl get pods -n kube-system
-          echo "kubectl get storageprofiles"
-          kubectl get storageprofiles
-          echo "kubectl get datastores"
-          kubectl get datastores
-          echo "kubectl get raftclusters"
-          kubectl get raftclusters
-          echo "kubectl get raftstores"
-          kubectl get raftstores
-          echo "kubectl get raftpartitions"
-          kubectl get raftpartitions
-          echo "kubectl get raftreplicas"
-          kubectl get raftreplicas
 
       - name: Fetch logs
         if: steps.install-controller.outcome == 'failure'
