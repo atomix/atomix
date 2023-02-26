@@ -25,6 +25,6 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 
 USER atomix
 
-COPY --from=build /build/dist/bin/atomix-raft-controller /usr/local/bin/atomix-raft-controller
+COPY --from=build /build/bin/atomix-raft-controller /usr/local/bin/atomix-raft-controller
 
 ENTRYPOINT ["atomix-raft-controller"]

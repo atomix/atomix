@@ -24,6 +24,6 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 
 USER atomix
 
-COPY --from=build /build/dist/bin/atomix-shared-memory-controller /usr/local/bin/atomix-shared-memory-controller
+COPY --from=build /build/dist/atomix-shared-memory-controller /usr/local/bin/atomix-shared-memory-controller
 
 ENTRYPOINT ["atomix-shared-memory-controller"]

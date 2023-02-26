@@ -14,11 +14,11 @@ RUN go mod download -x
 COPY ./cmd ./cmd
 COPY ./internal ./internal
 
-RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix ./cmd/atomix
+RUN go build -mod=readonly -trimpath -o /build/dist/atomix ./cmd/atomix
 
 FROM goreleaser/goreleaser-cross:v1.19
 
-COPY --from=build /build/dist/bin/atomix /usr/local/bin/atomix
+COPY --from=build /build/dist/atomix /usr/local/bin/atomix
 
 ENV CC=gcc
 ENV CXX=g++
