@@ -169,3 +169,23 @@ jobs:
 
       - name: Test Map/v1
         run: helm test test --filter name=test-map-v1
+
+      - name: Record k8s status
+        if: failure()
+        run: |
+          echo "kubectl get pods"
+          kubectl get pods
+          echo "kubectl get pods -n kube-system"
+          kubectl get pods -n kube-system
+          echo "kubectl get storageprofiles"
+          kubectl get storageprofiles
+          echo "kubectl get datastores"
+          kubectl get datastores
+          echo "kubectl get raftclusters"
+          kubectl get raftclusters
+          echo "kubectl get raftstores"
+          kubectl get raftstores
+          echo "kubectl get raftpartitions"
+          kubectl get raftpartitions
+          echo "kubectl get raftreplicas"
+          kubectl get raftreplicas
