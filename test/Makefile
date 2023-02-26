@@ -4,7 +4,7 @@
 
 .PHONY: build
 build:
-	docker build . -f build/Dockerfile atomix/test
+	docker build . -f build/Dockerfile -t atomix/test
 
 kind:
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi

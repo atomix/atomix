@@ -4,7 +4,7 @@
 
 .PHONY: build
 build:
-	docker build . -f build/Dockerfile atomix/cli
+	docker build . -f build/Dockerfile -t atomix/cli
 
 .PHONY: test
 test:

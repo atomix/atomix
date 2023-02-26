@@ -7,55 +7,54 @@ FROM atomix/cli AS builder
 RUN mkdir /build
 WORKDIR /build
 
-COPY ./go.mod /build
-COPY ./go.sum /build
+COPY go.mod go.sum ./
 
 RUN go mod download
 
 # Build the runtime binary
 FROM builder AS build-sidecar
 
-COPY ./cmd /build/cmd
-COPY ./pkg /build/pkg
+COPY ./cmd ./cmd
+COPY ./pkg ./pkg
 
 RUN atomix build \
     ./cmd/atomix-sidecar \
-    -o /build/bin/atomix-sidecar
+    -o ./bin/atomix-sidecar
 
 # Build the atomix.io/etcd@v3 storage driver
 FROM builder AS build-etcd-v3-driver
 RUN atomix build plugin \
-    -o /build/bin/driver.so \
+    -o ./bin/driver.so \
     github.com/atomix/atomix/drivers/etcd/v3@v0.6.1
 
 # Build the atomix.io/pod-memory@v1 storage driver
 FROM builder AS build-pod-memory-v1-driver
 RUN atomix build plugin \
-    -o /build/bin/driver.so \
+    -o ./bin/driver.so \
     github.com/atomix/atomix/drivers/pod-memory/v1@v0.6.1
 
 # Build the atomix.io/raft@v1 storage driver
 FROM builder AS build-raft-v1-driver
 RUN atomix build plugin \
-    -o /build/bin/driver.so \
+    -o ./bin/driver.so \
     github.com/atomix/atomix/drivers/raft/v1@v0.6.1
 
 # Build the atomix.io/redis@v8 storage driver
 FROM builder AS build-redis-v8-driver
 RUN atomix build plugin \
-    -o /build/bin/driver.so \
+    -o ./bin/driver.so \
     github.com/atomix/atomix/drivers/redis/v8@v0.6.1
 
 # Build the atomix.io/redis@v9 storage driver
 FROM builder AS build-redis-v9-driver
 RUN atomix build plugin \
-    -o /build/bin/driver.so \
+    -o ./bin/driver.so \
     github.com/atomix/atomix/drivers/redis/v9@v0.6.1
 
 # Build the atomix.io/shared-memory@v1 storage driver
 FROM builder AS build-shared-memory-v1-driver
 RUN atomix build plugin \
-    -o /build/bin/driver.so \
+    -o ./bin/driver.so \
     github.com/atomix/atomix/drivers/shared-memory/v1@v0.6.1
 
 # Pull binaries and plugins into the Alpine image

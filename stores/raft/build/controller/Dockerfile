@@ -2,21 +2,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-FROM goreleaser/goreleaser-cross:v1.19 AS build
+FROM atomix/cli AS build
 
 RUN mkdir /build
 WORKDIR /build
 
-COPY ./go.mod /build
-COPY ./go.sum /build
+COPY go.mod go.sum ./
 
-RUN go mod download -x
+RUN go mod download
 
-COPY ./api /build/api
-COPY ./cmd /build/cmd
-COPY ./pkg /build/pkg
+COPY ./api ./api
+COPY ./cmd ./cmd
+COPY ./pkg ./pkg
 
-RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix-raft-controller ./cmd/atomix-raft-controller
+RUN atomix build ./cmd/atomix-raft-controller -o ./bin/atomix-raft-controller
 
 FROM alpine:3.15
 

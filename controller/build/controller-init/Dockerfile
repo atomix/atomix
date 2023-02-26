@@ -2,20 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-FROM goreleaser/goreleaser-cross:v1.19 AS build
+FROM atomix/cli AS build
 
 RUN mkdir /build
 WORKDIR /build
 
-COPY ./go.mod /build
-COPY ./go.sum /build
+COPY go.mod go.sum ./
 
-RUN go mod download -x
+RUN go mod download
 
-COPY ./cmd /build/cmd
-COPY ./pkg /build/pkg
+COPY ./cmd ./cmd
+COPY ./pkg ./pkg
 
-RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix-controller-init ./cmd/atomix-controller-init
+RUN atomix build ./cmd/atomix-controller-init -o ./bin/atomix-controller-init
 
 FROM alpine:3.15
 
@@ -25,6 +24,6 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 
 USER atomix
 
-COPY --from=build /build/dist/bin/atomix-controller-init /usr/local/bin/atomix-controller-init
+COPY --from=build /build/bin/atomix-controller-init /usr/local/bin/atomix-controller-init
 
 ENTRYPOINT ["atomix-controller-init"]

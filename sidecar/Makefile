@@ -6,10 +6,10 @@
 build: sidecar controller
 
 controller:
-	docker build . -f build/controller/Dockerfile atomix/sidecar-controller
+	docker build . -f build/controller/Dockerfile -t atomix/sidecar-controller
 
 sidecar:
-	docker build . -f build/sidecar/Dockerfile atomix/sidecar
+	docker build . -f build/sidecar/Dockerfile -t atomix/sidecar
 
 kind: controller-kind sidecar-kind
 

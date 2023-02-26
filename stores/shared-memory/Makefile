@@ -6,10 +6,10 @@
 build: controller node
 
 controller:
-	docker build . -f build/controller/Dockerfile atomix/shared-memory-controller
+	docker build . -f build/controller/Dockerfile -t atomix/shared-memory-controller
 
 node:
-	docker build . -f build/node/Dockerfile atomix/shared-memory-node
+	docker build . -f build/node/Dockerfile -t atomix/shared-memory-node
 
 kind: controller-kind node-kind
 

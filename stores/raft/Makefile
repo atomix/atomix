@@ -6,10 +6,10 @@
 build: controller node
 
 controller:
-	docker build . -f build/controller/Dockerfile atomix/raft-controller
+	docker build . -f build/controller/Dockerfile -t atomix/raft-controller
 
 node:
-	docker build . -f build/node/Dockerfile atomix/raft-node
+	docker build . -f build/node/Dockerfile -t atomix/raft-node
 
 kind: controller-kind node-kind
 

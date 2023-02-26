@@ -26,7 +26,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-controller:
+  build-cli:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -35,7 +35,40 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build atomix/controller
+      - name: Build image
+        uses: docker/build-push-action@v3
+        with:
+          context: cli
+          file: cli/build/Dockerfile
+          tags: atomix/cli
+          outputs: type=docker,dest=/tmp/cli.tar
+
+      - name: Share image
+        uses: actions/upload-artifact@v3
+        with:
+          name: cli
+          path: /tmp/cli.tar
+
+  build-controller:
+    runs-on: ubuntu-latest
+    needs: [build-cli]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Fetch CLI
+        uses: actions/download-artifact@v3
+        with:
+          name: cli
+          path: /tmp
+
+      - name: Load CLI
+        run: docker load --input /tmp/cli.tar
+
+      - name: Build image
         uses: docker/build-push-action@v3
         with:
           context: controller
@@ -43,7 +76,7 @@ jobs:
           tags: atomix/controller
           outputs: type=docker,dest=/tmp/controller.tar
 
-      - name: Upload artifact
+      - name: Share image
         uses: actions/upload-artifact@v3
         with:
           name: controller
@@ -51,6 +84,7 @@ jobs:
 
   build-controller-init:
     runs-on: ubuntu-latest
+    needs: [build-cli]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -58,7 +92,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build atomix/controller-init
+      - name: Fetch CLI
+        uses: actions/download-artifact@v3
+        with:
+          name: cli
+          path: /tmp
+
+      - name: Load CLI
+        run: docker load --input /tmp/cli.tar
+
+      - name: Build image
         uses: docker/build-push-action@v3
         with:
           context: controller
@@ -66,7 +109,7 @@ jobs:
           tags: atomix/controller-init
           outputs: type=docker,dest=/tmp/controller-init.tar
 
-      - name: Upload artifact
+      - name: Share image
         uses: actions/upload-artifact@v3
         with:
           name: controller-init
@@ -74,6 +117,7 @@ jobs:
 
   build-sidecar:
     runs-on: ubuntu-latest
+    needs: [build-cli]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -81,15 +125,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build atomix/cli
-        uses: docker/build-push-action@v3
+      - name: Fetch CLI
+        uses: actions/download-artifact@v3
         with:
-          context: cli
-          file: cli/build/Dockerfile
-          tags: atomix/cli
-          load: true
+          name: cli
+          path: /tmp
 
-      - name: Build atomix/sidecar
+      - name: Load CLI
+        run: docker load --input /tmp/cli.tar
+
+      - name: Build image
         uses: docker/build-push-action@v3
         with:
           context: .
@@ -97,7 +142,7 @@ jobs:
           tags: atomix/sidecar
           outputs: type=docker,dest=/tmp/sidecar.tar
 
-      - name: Upload artifact
+      - name: Share image
         uses: actions/upload-artifact@v3
         with:
           name: sidecar
@@ -105,6 +150,7 @@ jobs:
 
   build-sidecar-controller:
     runs-on: ubuntu-latest
+    needs: [build-cli]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -112,7 +158,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build atomix/sidecar-controller
+      - name: Fetch CLI
+        uses: actions/download-artifact@v3
+        with:
+          name: cli
+          path: /tmp
+
+      - name: Load CLI
+        run: docker load --input /tmp/cli.tar
+
+      - name: Build image
         uses: docker/build-push-action@v3
         with:
           context: sidecar
@@ -120,7 +175,7 @@ jobs:
           tags: atomix/sidecar-controller
           outputs: type=docker,dest=/tmp/sidecar-controller.tar
 
-      - name: Upload artifact
+      - name: Share image
         uses: actions/upload-artifact@v3
         with:
           name: sidecar-controller
@@ -128,6 +183,7 @@ jobs:
 
   build-shared-memory-node:
     runs-on: ubuntu-latest
+    needs: [build-cli]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -135,7 +191,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build atomix/shared-memory-node
+      - name: Fetch CLI
+        uses: actions/download-artifact@v3
+        with:
+          name: cli
+          path: /tmp
+
+      - name: Load CLI
+        run: docker load --input /tmp/cli.tar
+
+      - name: Build image
         uses: docker/build-push-action@v3
         with:
           context: stores/shared-memory
@@ -143,7 +208,7 @@ jobs:
           tags: atomix/shared-memory-node
           outputs: type=docker,dest=/tmp/shared-memory-node.tar
 
-      - name: Upload artifact
+      - name: Share image
         uses: actions/upload-artifact@v3
         with:
           name: shared-memory-node
@@ -151,6 +216,7 @@ jobs:
 
   build-shared-memory-controller:
     runs-on: ubuntu-latest
+    needs: [build-cli]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -158,7 +224,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build atomix/shared-memory-controller
+      - name: Fetch CLI
+        uses: actions/download-artifact@v3
+        with:
+          name: cli
+          path: /tmp
+
+      - name: Load CLI
+        run: docker load --input /tmp/cli.tar
+
+      - name: Build image
         uses: docker/build-push-action@v3
         with:
           context: stores/shared-memory
@@ -166,7 +241,7 @@ jobs:
           tags: atomix/shared-memory-controller
           outputs: type=docker,dest=/tmp/shared-memory-controller.tar
 
-      - name: Upload artifact
+      - name: Share image
         uses: actions/upload-artifact@v3
         with:
           name: shared-memory-controller
@@ -174,6 +249,7 @@ jobs:
 
   build-tests:
     runs-on: ubuntu-latest
+    needs: [build-cli]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -181,7 +257,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build atomix/test
+      - name: Fetch CLI
+        uses: actions/download-artifact@v3
+        with:
+          name: cli
+          path: /tmp
+
+      - name: Load CLI
+        run: docker load --input /tmp/cli.tar
+
+      - name: Build image
         uses: docker/build-push-action@v3
         with:
           context: test
@@ -189,7 +274,7 @@ jobs:
           tags: atomix/test
           outputs: type=docker,dest=/tmp/test.tar
 
-      - name: Upload artifact
+      - name: Share image
         uses: actions/upload-artifact@v3
         with:
           name: test

@@ -2,32 +2,30 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-FROM atomix/cli AS builder
+FROM atomix/cli AS build
 
 RUN mkdir -p /build/sidecar
-
-COPY ./sidecar/go.mod /build/sidecar
-COPY ./sidecar/go.sum /build/sidecar
-
 WORKDIR /build/sidecar
+
+COPY ./sidecar/go.mod ./sidecar/go.sum ./
+
 RUN go mod download
 
-COPY ./sidecar/cmd /build/sidecar/cmd
-COPY ./sidecar/pkg /build/sidecar/pkg
+COPY ./sidecar/cmd ./cmd
+COPY ./sidecar/pkg ./pkg
 
 RUN atomix build \
     ./cmd/atomix-sidecar \
     -o /build/bin/atomix-sidecar
 
 RUN mkdir -p /build/driver
-
-COPY ./drivers/shared-memory/go.mod /build/driver
-COPY ./drivers/shared-memory/go.sum /build/driver
-
 WORKDIR /build/driver
+
+COPY ./drivers/shared-memory/go.mod ./drivers/shared-memory/go.sum ./
+
 RUN go mod download
 
-COPY ./drivers/shared-memory/v1 /build/driver/v1
+COPY ./drivers/shared-memory/v1 ./v1
 
 RUN atomix build plugin \
     -t /build/sidecar \
@@ -43,7 +41,7 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 
 USER atomix
 
-COPY --from=builder /build/bin/atomix-sidecar /usr/local/bin/atomix-sidecar
-COPY --from=builder /build/bin/driver.so /var/atomix/plugins/atomix.io/shared-memory@v1.so
+COPY --from=build /build/bin/atomix-sidecar /usr/local/bin/atomix-sidecar
+COPY --from=build /build/bin/driver.so /var/atomix/plugins/atomix.io/shared-memory@v1.so
 
 ENTRYPOINT ["atomix-sidecar"]

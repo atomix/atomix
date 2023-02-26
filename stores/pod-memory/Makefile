@@ -6,7 +6,7 @@
 build: controller
 
 controller:
-	docker build . -f build/controller/Dockerfile atomix/pod-memory-controller
+	docker build . -f build/controller/Dockerfile -t atomix/pod-memory-controller
 
 kind: controller-kind
 

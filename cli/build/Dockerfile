@@ -7,13 +7,12 @@ FROM goreleaser/goreleaser-cross:v1.19 AS build
 RUN mkdir /build
 WORKDIR /build
 
-COPY ./go.mod /build
-COPY ./go.sum /build
+COPY go.mod go.sum ./
 
 RUN go mod download -x
 
-COPY ./cmd /build/cmd
-COPY ./internal /build/internal
+COPY ./cmd ./cmd
+COPY ./internal ./internal
 
 RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix ./cmd/atomix
 

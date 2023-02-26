@@ -2,17 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-FROM goreleaser/goreleaser-cross:v1.19 AS build
+FROM atomix/cli AS build
 
 RUN mkdir /build
 WORKDIR /build
 
-COPY ./go.mod /build
-COPY ./go.sum /build
-COPY ./cmd /build/cmd
-COPY ./pkg /build/pkg
+COPY go.mod go.sum ./
 
-RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix-shared-memory-node ./cmd/atomix-shared-memory-node
+RUN go mod download
+
+COPY ./cmd ./cmd
+COPY ./pkg ./pkg
+
+RUN atomix build ./cmd/atomix-shared-memory-node -o ./bin/atomix-shared-memory-node
 
 FROM alpine:3.15
 

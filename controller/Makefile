@@ -6,10 +6,10 @@
 build: controller-init controller
 
 controller:
-	docker build . -f build/controller/Dockerfile atomix/controller
+	docker build . -f build/controller/Dockerfile -t atomix/controller
 
 controller-init:
-	docker build . -f build/controller-init/Dockerfile atomix/controller-init
+	docker build . -f build/controller-init/Dockerfile -t atomix/controller-init
 
 kind: controller-kind controller-init-kind
 
