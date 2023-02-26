@@ -55,10 +55,6 @@ jobs:
           load: true
           push: false
 
-      - name: Make sidecar
-        run: make
-        working-directory: sidecar
-
       - name: Build atomix/sidecar
         uses: docker/build-push-action@v3
         with:
@@ -70,6 +66,10 @@ jobs:
 
       - name: Load atomix/sidecar
         run: kind load docker-image atomix/sidecar
+
+      - name: Make sidecar controller
+        run: make controller
+        working-directory: sidecar
 
       - name: Build atomix/sidecar-controller
         uses: docker/build-push-action@v3
