@@ -19,47 +19,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-cli:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build image
-        uses: docker/build-push-action@v3
-        with:
-          context: cli
-          file: cli/build/Dockerfile
-          tags: atomix/cli
-          outputs: type=docker,dest=/tmp/cli.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: cli
-          path: /tmp/cli.tar
-
   build-controller:
     runs-on: ubuntu-latest
-    needs: [build-cli]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
-      - name: Fetch CLI
-        uses: actions/download-artifact@v3
-        with:
-          name: cli
-          path: /tmp
-
-      - name: Load CLI
-        run: docker load --input /tmp/cli.tar
 
       - name: Build image
         uses: docker/build-push-action@v3
@@ -77,22 +44,12 @@ jobs:
 
   build-controller-init:
     runs-on: ubuntu-latest
-    needs: [build-cli]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
-      - name: Fetch CLI
-        uses: actions/download-artifact@v3
-        with:
-          name: cli
-          path: /tmp
-
-      - name: Load CLI
-        run: docker load --input /tmp/cli.tar
 
       - name: Build image
         uses: docker/build-push-action@v3

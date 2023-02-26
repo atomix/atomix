@@ -43,7 +43,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push atomix/cli
+      - name: Build and push atomix/build
         uses: docker/build-push-action@v3
         with:
           context: cli

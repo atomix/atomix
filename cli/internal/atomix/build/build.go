@@ -157,7 +157,7 @@ func runDockerBuildExecutableCommand(cmd *cobra.Command, args []string) {
 	atomixArgs = append(atomixArgs, mainPath)
 
 	// Run the Docker command
-	dockerArgs = append(dockerArgs, "atomix/cli")
+	dockerArgs = append(dockerArgs, "atomix/build")
 	if err := exec.Command("docker", dockerArgs...).Run(atomixArgs...); err != nil {
 		log.Fatal(err)
 	}

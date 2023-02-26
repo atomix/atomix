@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-FROM atomix/cli AS build
+FROM atomix/build AS build
 
 RUN mkdir /build
 WORKDIR /build
