@@ -26,7 +26,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-primitives:
+  debug:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,6 +42,10 @@ jobs:
         uses: helm/kind-action@v1.4.0
         with:
           cluster_name: kind
+
+      - name: Make controller
+        run: make
+        working-directory: controller
 
       - name: Build atomix/controller
         uses: docker/build-push-action@v3
