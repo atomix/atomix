@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Test shared-memory driver
+name: Raft integration tests
 
 on:
   push:
@@ -12,8 +12,8 @@ on:
     paths:
       - 'controller/**'
       - 'sidecar/**'
-      - 'drivers/shared-memory/**'
-      - 'stores/shared-memory/**'
+      - 'drivers/raft/**'
+      - 'stores/raft/**'
       - 'test/**'
   pull_request:
   workflow_dispatch:
@@ -135,7 +135,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: drivers/shared-memory/test/Dockerfile
+          file: .github/configs/shared-memory/Dockerfile
           tags: atomix/sidecar
           outputs: type=docker,dest=/tmp/sidecar.tar
 
@@ -178,7 +178,7 @@ jobs:
           name: sidecar-controller
           path: /tmp/sidecar-controller.tar
 
-  build-shared-memory-node:
+  build-raft-node:
     runs-on: ubuntu-latest
     needs: [build-cli]
     steps:
@@ -200,18 +200,18 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v3
         with:
-          context: stores/shared-memory
-          file: stores/shared-memory/build/node/Dockerfile
-          tags: atomix/shared-memory-node
-          outputs: type=docker,dest=/tmp/shared-memory-node.tar
+          context: stores/raft
+          file: stores/raft/build/node/Dockerfile
+          tags: atomix/raft-node
+          outputs: type=docker,dest=/tmp/raft-node.tar
 
       - name: Share image
         uses: actions/upload-artifact@v3
         with:
-          name: shared-memory-node
-          path: /tmp/shared-memory-node.tar
+          name: raft-node
+          path: /tmp/raft-node.tar
 
-  build-shared-memory-controller:
+  build-raft-controller:
     runs-on: ubuntu-latest
     needs: [build-cli]
     steps:
@@ -233,16 +233,16 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v3
         with:
-          context: stores/shared-memory
-          file: stores/shared-memory/build/controller/Dockerfile
-          tags: atomix/shared-memory-controller
-          outputs: type=docker,dest=/tmp/shared-memory-controller.tar
+          context: stores/raft
+          file: stores/raft/build/controller/Dockerfile
+          tags: atomix/raft-controller
+          outputs: type=docker,dest=/tmp/raft-controller.tar
 
       - name: Share image
         uses: actions/upload-artifact@v3
         with:
-          name: shared-memory-controller
-          path: /tmp/shared-memory-controller.tar
+          name: raft-controller
+          path: /tmp/raft-controller.tar
 
   build-tests:
     runs-on: ubuntu-latest
@@ -285,8 +285,8 @@ jobs:
       - build-controller-init
       - build-sidecar
       - build-sidecar-controller
-      - build-shared-memory-node
-      - build-shared-memory-controller
+      - build-raft-node
+      - build-raft-controller
       - build-tests
 
     steps:
@@ -328,16 +328,16 @@ jobs:
           name: controller-init
           path: /tmp
 
-      - name: Download atomix/shared-memory-node
+      - name: Download atomix/raft-node
         uses: actions/download-artifact@v3
         with:
-          name: shared-memory-node
+          name: raft-node
           path: /tmp
 
-      - name: Download atomix/shared-memory-controller
+      - name: Download atomix/raft-controller
         uses: actions/download-artifact@v3
         with:
-          name: shared-memory-controller
+          name: raft-controller
           path: /tmp
 
       - name: Download atomix/test
@@ -352,8 +352,8 @@ jobs:
           kind load image-archive /tmp/controller-init.tar
           kind load image-archive /tmp/sidecar.tar
           kind load image-archive /tmp/sidecar-controller.tar
-          kind load image-archive /tmp/shared-memory-node.tar
-          kind load image-archive /tmp/shared-memory-controller.tar
+          kind load image-archive /tmp/raft-node.tar
+          kind load image-archive /tmp/raft-controller.tar
           kind load image-archive /tmp/test.tar
 
       - name: Install core controller
@@ -363,13 +363,13 @@ jobs:
         run: helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --set image.pullPolicy=Never --wait
 
       - name: Install store controller
-        run: helm install -n kube-system atomix-shared-memory-controller ./stores/shared-memory/chart --set image.pullPolicy=Never --wait
+        run: helm install -n kube-system atomix-raft-controller ./stores/raft/chart --set image.pullPolicy=Never --wait
 
       - name: Setup tests
-        run: kubectl create -f drivers/shared-memory/test/setup.yaml
+        run: kubectl create -f .github/configs/shared-memory/setup.yaml
 
       - name: Install tests
-        run: helm install test ./test/chart -f drivers/shared-memory/test/suite.yaml --set image.pullPolicy=Never --wait
+        run: helm install test ./test/chart -f .github/configs/shared-memory/suite.yaml --set image.pullPolicy=Never --wait
 
       - name: Test Counter/v1
         run: helm test test --filter name=test-counter-v1
@@ -388,5 +388,11 @@ jobs:
           kubectl get storageprofiles
           echo "kubectl get datastores"
           kubectl get datastores
-          echo "kubectl get sharedmemorystores"
-          kubectl get sharedmemorystores
+          echo "kubectl get raftclusters"
+          kubectl get raftclusters
+          echo "kubectl get raftstores"
+          kubectl get raftstores
+          echo "kubectl get raftpartitions"
+          kubectl get raftpartitions
+          echo "kubectl get raftreplicas"
+          kubectl get raftreplicas

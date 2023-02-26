@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Test sidecar
+name: Controller integration tests
 
 on:
   push:
@@ -10,9 +10,7 @@ on:
       - 'master'
       - 'actions'
     paths:
-      - 'cli/**'
-      - 'sidecar/**'
-      - 'drivers/**'
+      - 'controller/**'
   pull_request:
   workflow_dispatch:
 
@@ -43,72 +41,6 @@ jobs:
         with:
           name: cli
           path: /tmp/cli.tar
-
-  build-sidecar:
-    runs-on: ubuntu-latest
-    needs: [build-cli]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Fetch CLI
-        uses: actions/download-artifact@v3
-        with:
-          name: cli
-          path: /tmp
-
-      - name: Load CLI
-        run: docker load --input /tmp/cli.tar
-
-      - name: Build image
-        uses: docker/build-push-action@v3
-        with:
-          context: sidecar
-          file: sidecar/build/sidecar/Dockerfile
-          tags: atomix/sidecar
-          outputs: type=docker,dest=/tmp/sidecar.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: sidecar
-          path: /tmp/sidecar.tar
-
-  build-sidecar-controller:
-    runs-on: ubuntu-latest
-    needs: [build-cli]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Fetch CLI
-        uses: actions/download-artifact@v3
-        with:
-          name: cli
-          path: /tmp
-
-      - name: Load CLI
-        run: docker load --input /tmp/cli.tar
-
-      - name: Build image
-        uses: docker/build-push-action@v3
-        with:
-          context: sidecar
-          file: sidecar/build/controller/Dockerfile
-          tags: atomix/sidecar-controller
-          outputs: type=docker,dest=/tmp/sidecar-controller.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: sidecar-controller
-          path: /tmp/sidecar-controller.tar
 
   build-controller:
     runs-on: ubuntu-latest
@@ -180,8 +112,6 @@ jobs:
     runs-on: ubuntu-latest
 
     needs:
-      - build-sidecar
-      - build-sidecar-controller
       - build-controller
       - build-controller-init
 
@@ -200,42 +130,25 @@ jobs:
         with:
           cluster_name: kind
 
-      - name: Fetch atomix/sidecar
-        uses: actions/download-artifact@v3
-        with:
-          name: sidecar
-          path: /tmp
-
-      - name: Fetch atomix/sidecar-controller
-        uses: actions/download-artifact@v3
-        with:
-          name: sidecar-controller
-          path: /tmp
-
-      - name: Fetch atomix/controller
+      - name: Download atomix/controller
         uses: actions/download-artifact@v3
         with:
           name: controller
           path: /tmp
 
-      - name: Fetch atomix/controller-init
+      - name: Download atomix/controller-init
         uses: actions/download-artifact@v3
         with:
           name: controller-init
           path: /tmp
 
-      - name: Load images
+      - name: Load Docker images
         run: |
-          kind load image-archive /tmp/sidecar.tar
-          kind load image-archive /tmp/sidecar-controller.tar
           kind load image-archive /tmp/controller.tar
           kind load image-archive /tmp/controller-init.tar
 
       - name: Install core controller
         run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
-      - name: Install sidecar controller
-        run: helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --set image.pullPolicy=Never --wait
-
       - name: Run tests
-        run: helm test -n kube-system atomix-sidecar-controller
+        run: helm test -n kube-system atomix-controller
