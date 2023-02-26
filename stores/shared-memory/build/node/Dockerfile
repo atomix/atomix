@@ -24,6 +24,6 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 
 USER atomix
 
-COPY --from=build /build/dist/atomix-shared-memory-node /usr/local/bin/atomix-shared-memory-node
+COPY --from=build /build/bin/atomix-shared-memory-node /usr/local/bin/atomix-shared-memory-node
 
 ENTRYPOINT ["atomix-shared-memory-node"]

@@ -25,6 +25,6 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 
 USER atomix
 
-COPY --from=build /build/dist/atomix-raft-node /usr/local/bin/atomix-raft-node
+COPY --from=build /build/bin/atomix-raft-node /usr/local/bin/atomix-raft-node
 
 ENTRYPOINT ["atomix-raft-node"]
