@@ -174,12 +174,10 @@ jobs:
 
       - name: Load Docker images
         run: |
-          docker load --input /tmp/sidecar.tar
-          docker load --input /tmp/sidecar-controller.tar
-          docker load --input /tmp/controller.tar
-          docker load --input /tmp/controller-init.tar
-          docker image ls -a
-          kind load docker-image atomix/sidecar atomix/sidecar-controller atomix/controller atomix/controller-init
+          kind load image-archive /tmp/sidecar.tar
+          kind load image-archive /tmp/sidecar-controller.tar
+          kind load image-archive /tmp/controller.tar
+          kind load image-archive /tmp/controller-init.tar
 
       - name: Install core controller
         run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
