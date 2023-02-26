@@ -78,7 +78,4 @@ jobs:
         run: |
           echo "kubectl get pods -n kube-system"
           kubectl get pods -n kube-system
-
-      - name: Fetch logs
-        if: steps.install-controller.outcome == 'failure'
-        run: kubectl logs -n kube-system deployment/atomix-controller
+          kubectl logs -n kube-system deployment/atomix-controller
