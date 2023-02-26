@@ -23,8 +23,187 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build-controller:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build atomix/controller
+        uses: docker/build-push-action@v3
+        with:
+          context: controller
+          file: controller/build/controller/Dockerfile
+          tags: atomix/controller
+          outputs: type=docker,dest=/tmp/controller.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: controller
+          path: /tmp/controller.tar
+
+  build-controller-init:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build atomix/controller-init
+        uses: docker/build-push-action@v3
+        with:
+          context: controller
+          file: controller/build/controller-init/Dockerfile
+          tags: atomix/controller-init
+          outputs: type=docker,dest=/tmp/controller-init.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: controller-init
+          path: /tmp/controller-init.tar
+
+  build-sidecar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build atomix/cli
+        uses: docker/build-push-action@v3
+        with:
+          context: cli
+          file: cli/build/Dockerfile
+          tags: atomix/cli
+          load: true
+
+      - name: Build atomix/sidecar
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: drivers/raft/test/Dockerfile
+          tags: atomix/sidecar
+          outputs: type=docker,dest=/tmp/sidecar.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: sidecar
+          path: /tmp/sidecar.tar
+
+  build-sidecar-controller:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build atomix/sidecar-controller
+        uses: docker/build-push-action@v3
+        with:
+          context: sidecar
+          file: sidecar/build/controller/Dockerfile
+          tags: atomix/sidecar-controller
+          outputs: type=docker,dest=/tmp/sidecar-controller.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: sidecar-controller
+          path: /tmp/sidecar-controller.tar
+
+  build-raft-node:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build atomix/raft-node
+        uses: docker/build-push-action@v3
+        with:
+          context: stores/raft
+          file: stores/raft/build/node/Dockerfile
+          tags: atomix/raft-node
+          outputs: type=docker,dest=/tmp/raft-node.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: raft-node
+          path: /tmp/raft-node.tar
+
+  build-raft-controller:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build atomix/raft-controller
+        uses: docker/build-push-action@v3
+        with:
+          context: stores/raft
+          file: stores/raft/build/controller/Dockerfile
+          tags: atomix/raft-controller
+          outputs: type=docker,dest=/tmp/raft-controller.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: raft-controller
+          path: /tmp/raft-controller.tar
+
+  build-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build atomix/test
+        uses: docker/build-push-action@v3
+        with:
+          context: test
+          file: test/build/Dockerfile
+          tags: atomix/test
+          outputs: type=docker,dest=/tmp/test.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: test
+          path: /tmp/test.tar
+
   test-primitives:
     runs-on: ubuntu-latest
+
+    needs:
+      - build-controller
+      - build-controller-init
+      - build-sidecar
+      - build-sidecar-controller
+      - build-raft-node
+      - build-raft-controller
+      - build-tests
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -40,98 +219,59 @@ jobs:
         with:
           cluster_name: kind
 
-      - name: Build atomix/cli
-        uses: docker/build-push-action@v3
+      - name: Download atomix/sidecar
+        uses: actions/download-artifact@v3
         with:
-          context: cli
-          file: cli/build/Dockerfile
-          tags: atomix/cli
-          load: true
-          push: false
+          name: sidecar
+          path: /tmp
 
-      - name: Build atomix/sidecar
-        uses: docker/build-push-action@v3
+      - name: Download atomix/sidecar-controller
+        uses: actions/download-artifact@v3
         with:
-          context: .
-          file: drivers/raft/test/Dockerfile
-          tags: atomix/sidecar
-          load: true
-          push: false
+          name: sidecar-controller
+          path: /tmp
 
-      - name: Load atomix/sidecar
-        run: kind load docker-image atomix/sidecar
-
-      - name: Build atomix/sidecar-controller
-        uses: docker/build-push-action@v3
+      - name: Download atomix/controller
+        uses: actions/download-artifact@v3
         with:
-          context: sidecar
-          file: sidecar/build/controller/Dockerfile
-          tags: atomix/sidecar-controller
-          load: true
-          push: false
+          name: controller
+          path: /tmp
 
-      - name: Load atomix/sidecar-controller
-        run: kind load docker-image atomix/sidecar-controller
-
-      - name: Build atomix/controller
-        uses: docker/build-push-action@v3
+      - name: Download atomix/controller-init
+        uses: actions/download-artifact@v3
         with:
-          context: controller
-          file: controller/build/controller/Dockerfile
-          tags: atomix/controller
-          load: true
-          push: false
+          name: controller-init
+          path: /tmp
 
-      - name: Load atomix/controller
-        run: kind load docker-image atomix/controller
-
-      - name: Build atomix/controller-init
-        uses: docker/build-push-action@v3
+      - name: Download atomix/raft-node
+        uses: actions/download-artifact@v3
         with:
-          context: controller
-          file: controller/build/controller-init/Dockerfile
-          tags: atomix/controller-init
-          load: true
-          push: false
+          name: raft-node
+          path: /tmp
 
-      - name: Load atomix/controller-init
-        run: kind load docker-image atomix/controller-init
-
-      - name: Build atomix/raft-controller
-        uses: docker/build-push-action@v3
+      - name: Download atomix/raft-controller
+        uses: actions/download-artifact@v3
         with:
-          context: stores/raft
-          file: stores/raft/build/controller/Dockerfile
-          tags: atomix/raft-controller
-          load: true
-          push: false
+          name: raft-controller
+          path: /tmp
 
-      - name: Load atomix/raft-controller
-        run: kind load docker-image atomix/raft-controller
-
-      - name: Build atomix/raft-node
-        uses: docker/build-push-action@v3
+      - name: Download atomix/test
+        uses: actions/download-artifact@v3
         with:
-          context: stores/raft
-          file: stores/raft/build/node/Dockerfile
-          tags: atomix/raft-node
-          load: true
-          push: false
+          name: test
+          path: /tmp
 
-      - name: Load atomix/raft-node
-        run: kind load docker-image atomix/raft-node
-
-      - name: Build atomix/test
-        uses: docker/build-push-action@v3
-        with:
-          context: test
-          file: test/build/Dockerfile
-          tags: atomix/test
-          load: true
-          push: false
-
-      - name: Load atomix/test
-        run: kind load docker-image atomix/test
+      - name: Load Docker images
+        run: |
+          docker load --input /tmp/controller.tar
+          docker load --input /tmp/controller-init.tar
+          docker load --input /tmp/sidecar.tar
+          docker load --input /tmp/sidecar-controller.tar
+          docker load --input /tmp/raft-node.tar
+          docker load --input /tmp/raft-controller.tar
+          docker load --input /tmp/test.tar
+          docker image ls -a
+          kind load docker-image atomix/controller atomix/controller-init atomix/sidecar atomix/sidecar-controller atomix/raft-node atomix/raft-controller atomix/test
 
       - name: Install core controller
         run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait

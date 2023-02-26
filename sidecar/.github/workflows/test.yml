@@ -30,6 +30,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - name: Build atomix/cli
+        uses: docker/build-push-action@v3
+        with:
+          context: cli
+          file: cli/build/Dockerfile
+          tags: atomix/cli
+          load: true
+
       - name: Build atomix/sidecar
         uses: docker/build-push-action@v3
         with:
@@ -115,11 +123,13 @@ jobs:
 
   run-tests:
     runs-on: ubuntu-latest
+
     needs:
       - build-sidecar
       - build-sidecar-controller
       - build-controller
       - build-controller-init
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
