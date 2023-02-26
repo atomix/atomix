@@ -150,19 +150,19 @@ jobs:
         run: kind load docker-image atomix/test
 
       - name: Install core controller
-        run: helm install -n kube-system atomix-controller ./controller/chart --wait
+        run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Install sidecar controller
-        run: helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --wait
+        run: helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --set image.pullPolicy=Never --wait
 
       - name: Install store controller
-        run: helm install -n kube-system atomix-shared-memory-controller ./stores/shared-memory/chart --wait
+        run: helm install -n kube-system atomix-shared-memory-controller ./stores/shared-memory/chart --set image.pullPolicy=Never --wait
 
       - name: Setup tests
         run: kubectl create -f drivers/shared-memory/test/setup.yaml
 
       - name: Install tests
-        run: helm install test ./test/chart -f drivers/shared-memory/test/suite.yaml --wait
+        run: helm install test ./test/chart -f drivers/shared-memory/test/suite.yaml --set image.pullPolicy=Never --wait
 
       - name: Test Counter/v1
         run: helm test test --filter name=test-counter-v1

@@ -8,7 +8,6 @@ metadata:
   name: test
 spec:
   replicas: 3
-  image: atomix/raft-node
   imagePullPolicy: Never
 ---
 apiVersion: raft.atomix.io/v1beta3

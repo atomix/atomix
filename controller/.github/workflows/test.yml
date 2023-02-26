@@ -105,7 +105,7 @@ jobs:
         run: kind load docker-image atomix/controller-init
 
       - name: Install core controller
-        run: helm install -n kube-system atomix-controller ./controller/chart --wait
+        run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Run tests
         run: helm test -n kube-system atomix-controller

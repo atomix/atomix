@@ -91,14 +91,11 @@ jobs:
       - name: Load atomix/controller-init
         run: kind load docker-image atomix/controller-init
 
-      - name: Load atomix/controller-init
-        run: kind load docker-image atomix/controller-init
-
       - name: Install core controller
-        run: helm install -n kube-system atomix-controller ./controller/chart --wait
+        run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Install sidecar controller
-        run: helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --wait
+        run: helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --set image.pullPolicy=Never --wait
 
       - name: Run tests
         run: helm test -n kube-system atomix-sidecar-controller

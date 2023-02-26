@@ -2,10 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-{{- $ := . }}
+{{- $chart := .Chart }}
+{{- $release := .Release }}
+{{- $values := .Values }}
 {{- range $i, $test := .Values.tests }}
 {{- $name := ( lower ( default ( printf "%s-%s" $test.kind $test.apiVersion ) $test.name ) ) }}
-{{- range $t := $.Values.tests }}
+{{- range $t := $values.tests }}
   {{- if ( and ( eq $t.kind $test.kind ) ( eq $t.apiVersion $test.apiVersion ) ) }}
     {{- $name = ( lower ( default ( printf "%s-%s-%d" $test.kind $test.apiVersion $i ) $test.name ) ) }}
   {{- end }}
@@ -23,24 +25,24 @@ metadata:
     runtime.atomix.io/profile: {{ $name }}
   annotations:
     helm.sh/hook: test
-    {{- if $.Values.sidecar.image.tag }}
-    sidecar.atomix.io/image: {{ printf "%s:%s" $.Values.sidecar.image.repository $.Values.sidecar.image.tag }}
+    {{- if $values.sidecar.image.tag }}
+    sidecar.atomix.io/image: {{ printf "%s:%s" $values.sidecar.image.repository $values.sidecar.image.tag }}
     {{- end }}
-    {{- with $.Values.sidecar.image.pullPolicy }}
+    {{- with $values.sidecar.image.pullPolicy }}
     sidecar.atomix.io/imagePullPolicy: {{ . }}
     {{- end }}
 spec:
   shareProcessNamespace: true
   containers:
     - name: atomix-test
-      {{- if $.Values.image.tag }}
-      image: {{ printf "%s:%s" $.Values.image.repository $.Values.image.tag }}
-      {{- else if $.Chart.AppVersion }}
-      image: {{ printf "%s:%s" $.Values.image.repository $.Chart.AppVersion }}
+      {{- if $values.image.tag }}
+      image: {{ printf "%s:%s" $values.image.repository $values.image.tag }}
+      {{- else if $chart.AppVersion }}
+      image: {{ printf "%s:%s" $values.image.repository $chart.AppVersion }}
       {{- else }}
-      image: {{ $.Values.image.repository }}
+      image: {{ $values.image.repository }}
       {{- end }}
-      imagePullPolicy: {{ $.Values.image.pullPolicy }}
+      imagePullPolicy: {{ $values.image.pullPolicy }}
       command:
         - /bin/bash
         - -c
@@ -58,7 +60,7 @@ metadata:
 spec:
   routes:
     - store:
-        name: {{ $.Release.Name }}
+        name: {{ $release.Name }}
       rules:
         - kind: {{ $test.kind }}
           apiVersion: {{ $test.apiVersion }}
