@@ -32,9 +32,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go
-
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
 
@@ -43,14 +40,11 @@ jobs:
         with:
           cluster_name: kind
 
-      - name: Make CLI
-        run: make
-        working-directory: cli
-
       - name: Build atomix/cli
         uses: docker/build-push-action@v3
         with:
-          context: cli/build
+          context: cli
+          file: cli/build/Dockerfile
           tags: atomix/cli
           load: true
           push: false
@@ -67,14 +61,11 @@ jobs:
       - name: Load atomix/sidecar
         run: kind load docker-image atomix/sidecar
 
-      - name: Make sidecar controller
-        run: make controller
-        working-directory: sidecar
-
       - name: Build atomix/sidecar-controller
         uses: docker/build-push-action@v3
         with:
-          context: sidecar/build/controller
+          context: sidecar
+          file: sidecar/build/controller/Dockerfile
           tags: atomix/sidecar-controller
           load: true
           push: false
@@ -82,14 +73,11 @@ jobs:
       - name: Load atomix/sidecar-controller
         run: kind load docker-image atomix/sidecar-controller
 
-      - name: Make controller
-        run: make
-        working-directory: controller
-
       - name: Build atomix/controller
         uses: docker/build-push-action@v3
         with:
-          context: controller/build/controller
+          context: controller
+          file: controller/build/controller/Dockerfile
           tags: atomix/controller
           load: true
           push: false
@@ -100,7 +88,8 @@ jobs:
       - name: Build atomix/controller-init
         uses: docker/build-push-action@v3
         with:
-          context: controller/build/controller-init
+          context: controller
+          file: controller/build/controller-init/Dockerfile
           tags: atomix/controller-init
           load: true
           push: false
@@ -108,14 +97,11 @@ jobs:
       - name: Load atomix/controller-init
         run: kind load docker-image atomix/controller-init
 
-      - name: Make store
-        run: make
-        working-directory: stores/raft
-
       - name: Build atomix/raft-controller
         uses: docker/build-push-action@v3
         with:
-          context: stores/raft/build/controller
+          context: stores/raft
+          file: stores/raft/build/controller/Dockerfile
           tags: atomix/raft-controller
           load: true
           push: false
@@ -126,7 +112,8 @@ jobs:
       - name: Build atomix/raft-node
         uses: docker/build-push-action@v3
         with:
-          context: stores/raft/build/node
+          context: stores/raft
+          file: stores/raft/build/node/Dockerfile
           tags: atomix/raft-node
           load: true
           push: false
@@ -134,14 +121,11 @@ jobs:
       - name: Load atomix/raft-node
         run: kind load docker-image atomix/raft-node
 
-      - name: Make tests
-        run: make
-        working-directory: test
-
       - name: Build atomix/test
         uses: docker/build-push-action@v3
         with:
-          context: test/build
+          context: test
+          file: test/build/Dockerfile
           tags: atomix/test
           load: true
           push: false

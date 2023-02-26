@@ -6,7 +6,13 @@
 build: controller
 
 controller:
-	GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -o build/controller/atomix-pod-memory-controller ./cmd/atomix-pod-memory-controller
+	docker build . -f build/controller/Dockerfile atomix/pod-memory-controller
+
+kind: controller-kind
+
+controller-kind:
+	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
+	kind load docker-image atomix/pod-memory-controller:latest
 
 .PHONY: test
 test:

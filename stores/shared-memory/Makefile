@@ -3,13 +3,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build: node controller
+build: controller node
 
 controller:
-	GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -o build/controller/atomix-shared-memory-controller ./cmd/atomix-shared-memory-controller
+	docker build . -f build/controller/Dockerfile atomix/shared-memory-controller
 
 node:
-	GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -o build/node/atomix-shared-memory-node ./cmd/atomix-shared-memory-node
+	docker build . -f build/node/Dockerfile atomix/shared-memory-node
+
+kind: controller-kind node-kind
+
+controller-kind:
+	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
+	kind load docker-image atomix/shared-memory-controller:latest
+
+node-kind:
+	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
+	kind load docker-image atomix/shared-memory-node:latest
 
 .PHONY: test
 test:

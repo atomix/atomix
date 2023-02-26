@@ -4,7 +4,11 @@
 
 .PHONY: build
 build:
-	GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -o build/atomix-test ./cmd/atomix-test
+	docker build . -f build/Dockerfile atomix/test
+
+kind:
+	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
+	kind load docker-image atomix/test:latest
 
 .PHONY: test
 test:

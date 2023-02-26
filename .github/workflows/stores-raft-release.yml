@@ -46,24 +46,19 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go
-
-      - name: Make
-        run: make
-        working-directory: stores/raft
-
       - name: Build and push atomix/raft-controller
         uses: docker/build-push-action@v3
         with:
-          context: stores/raft/build/controller
+          context: stores/raft
+          file: stores/raft/build/controller/Dockerfile
           tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/raft-controller:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/raft-controller:latest,atomix/raft-controller:v{0},atomix/raft-controller:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
           push: true
 
       - name: Build and push atomix/raft-node
         uses: docker/build-push-action@v3
         with:
-          context: stores/raft/build/node
+          context: stores/raft
+          file: stores/raft/build/node/Dockerfile
           tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/raft-node:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/raft-node:latest,atomix/raft-node:v{0},atomix/raft-node:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
           push: true
 

@@ -43,16 +43,10 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go
-
-      - name: Make
-        run: make
-        working-directory: bench
-
       - name: Build and push atomix/bench
         uses: docker/build-push-action@v3
         with:
-          context: bench/build
+          context: bench
+          file: bench/build/Dockerfile
           tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/bench:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/bench:latest,atomix/bench:v{0},atomix/bench:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
           push: true

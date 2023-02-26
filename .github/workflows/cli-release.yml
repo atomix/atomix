@@ -46,16 +46,10 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go
-
-      - name: Make CLI
-        run: make
-        working-directory: cli
-
       - name: Build and push atomix/cli
         uses: docker/build-push-action@v3
         with:
-          context: cli/build
+          context: cli
+          file: cli/build/Dockerfile
           tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/cli:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/cli:latest,atomix/cli:v{0},atomix/cli:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
           push: true

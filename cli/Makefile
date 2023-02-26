@@ -4,7 +4,7 @@
 
 .PHONY: build
 build:
-	GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -o build/atomix ./cmd/atomix
+	docker build . -f build/Dockerfile atomix/cli
 
 .PHONY: test
 test:

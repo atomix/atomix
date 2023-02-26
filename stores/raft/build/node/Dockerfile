@@ -2,6 +2,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+FROM goreleaser/goreleaser-cross:v1.19 AS build
+
+RUN mkdir /build
+WORKDIR /build
+
+COPY ./go.mod /build
+COPY ./go.sum /build
+
+RUN go mod download -x
+
+COPY ./api /build/api
+COPY ./cmd /build/cmd
+COPY ./pkg /build/pkg
+
+RUN go build -mod=readonly -trimpath -o /build/dist/bin/atomix-raft-node ./cmd/atomix-raft-node
+
 FROM alpine:3.15
 
 RUN apk add libc6-compat bash
@@ -10,6 +26,6 @@ RUN addgroup -S atomix && adduser -S -G atomix atomix
 
 USER atomix
 
-ADD atomix-raft-node /usr/local/bin/atomix-raft-node
+COPY --from=build /build/dist/bin/atomix-raft-node /usr/local/bin/atomix-raft-node
 
 ENTRYPOINT ["atomix-raft-node"]

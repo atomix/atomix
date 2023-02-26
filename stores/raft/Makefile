@@ -3,13 +3,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build: node controller
+build: controller node
 
 controller:
-	GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -o build/controller/atomix-raft-controller ./cmd/atomix-raft-controller
+	docker build . -f build/controller/Dockerfile atomix/raft-controller
 
 node:
-	GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -o build/node/atomix-raft-node ./cmd/atomix-raft-node
+	docker build . -f build/node/Dockerfile atomix/raft-node
+
+kind: controller-kind node-kind
+
+controller-kind:
+	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
+	kind load docker-image atomix/raft-controller:latest
+
+node-kind:
+	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
+	kind load docker-image atomix/raft-node:latest
 
 .PHONY: test
 test:

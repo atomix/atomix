@@ -43,24 +43,19 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go
-
-      - name: Make
-        run: make
-        working-directory: stores/shared-memory
-
       - name: Build and push atomix/shared-memory-controller
         uses: docker/build-push-action@v3
         with:
-          context: stores/shared-memory/build/controller
+          context: stores/shared-memory
+          file: stores/shared-memory/build/controller/Dockerfile
           tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/shared-memory-controller:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/shared-memory-controller:latest,atomix/shared-memory-controller:v{0},atomix/shared-memory-controller:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
           push: true
 
       - name: Build and push atomix/shared-memory-node
         uses: docker/build-push-action@v3
         with:
-          context: stores/shared-memory/build/node
+          context: stores/shared-memory
+          file: stores/shared-memory/build/node/Dockerfile
           tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/shared-memory-node:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/shared-memory-node:latest,atomix/shared-memory-node:v{0},atomix/shared-memory-node:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
           push: true
 

@@ -43,17 +43,11 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go
-
-      - name: Make
-        run: make
-        working-directory: stores/pod-memory
-
       - name: Build and push atomix/pod-memory-controller
         uses: docker/build-push-action@v3
         with:
-          context: stores/pod-memory/build/controller
+          context: stores/pod-memory
+          file: stores/pod-memory/build/controller/Dockerfile
           tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/pod-memory-controller:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/pod-memory-controller:latest,atomix/pod-memory-controller:v{0},atomix/pod-memory-controller:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
           push: true
 

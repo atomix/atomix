@@ -28,9 +28,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go
-
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
 
@@ -39,53 +36,11 @@ jobs:
         with:
           cluster_name: kind
 
-      - name: Make CLI
-        run: make
-        working-directory: cli
-
-      - name: Build atomix/cli
-        uses: docker/build-push-action@v3
-        with:
-          context: cli/build
-          tags: atomix/cli
-          load: true
-          push: false
-
-      - name: Make sidecar
-        run: make
-        working-directory: sidecar
-
-      - name: Build atomix/sidecar
-        uses: docker/build-push-action@v3
-        with:
-          context: sidecar
-          file: sidecar/build/sidecar/Dockerfile
-          tags: atomix/sidecar
-          load: true
-          push: false
-
-      - name: Load atomix/sidecar
-        run: kind load docker-image atomix/sidecar
-
-      - name: Build atomix/sidecar-controller
-        uses: docker/build-push-action@v3
-        with:
-          context: sidecar/build/controller
-          tags: atomix/sidecar-controller
-          load: true
-          push: false
-
-      - name: Load atomix/sidecar-controller
-        run: kind load docker-image atomix/sidecar-controller
-
-      - name: Make controller
-        run: make
-        working-directory: controller
-
       - name: Build atomix/controller
         uses: docker/build-push-action@v3
         with:
-          context: controller/build/controller
+          context: controller
+          file: controller/build/controller/Dockerfile
           tags: atomix/controller
           load: true
           push: false
@@ -96,7 +51,8 @@ jobs:
       - name: Build atomix/controller-init
         uses: docker/build-push-action@v3
         with:
-          context: controller/build/controller-init
+          context: controller
+          file: controller/build/controller-init/Dockerfile
           tags: atomix/controller-init
           load: true
           push: false

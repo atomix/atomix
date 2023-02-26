@@ -49,14 +49,11 @@ jobs:
       - name: Setup Go
         uses: ./.github/actions/setup-go
 
-      - name: Make
-        run: make
-        working-directory: sidecar
-
       - name: Build and push atomix/sidecar-controller
         uses: docker/build-push-action@v3
         with:
-          context: sidecar/build/controller
+          context: sidecar
+          file: sidecar/build/controller/Dockerfile
           tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/sidecar-controller:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/sidecar-controller:latest,atomix/sidecar-controller:v{0},atomix/sidecar-controller:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
           push: true
 
@@ -64,7 +61,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: sidecar
-          file: build/sidecar/Dockerfile
+          file: sidecar/build/sidecar/Dockerfile
           tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/sidecar:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/sidecar:latest,atomix/sidecar:v{0},atomix/sidecar:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
           push: true
 
