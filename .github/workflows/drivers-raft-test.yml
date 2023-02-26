@@ -32,6 +32,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          install: true
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx
+
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
 
@@ -44,19 +58,25 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: cli
+          builder: ${{ steps.buildx.outputs.name }}
           file: cli/build/Dockerfile
           tags: atomix/cli
           load: true
           push: false
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,mode=max,dest=/tmp/.buildx-cache
 
       - name: Build atomix/sidecar
         uses: docker/build-push-action@v3
         with:
           context: .
+          builder: ${{ steps.buildx.outputs.name }}
           file: drivers/raft/test/Dockerfile
           tags: atomix/sidecar
           load: true
           push: false
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,mode=max,dest=/tmp/.buildx-cache
 
       - name: Load atomix/sidecar
         run: kind load docker-image atomix/sidecar
@@ -65,10 +85,13 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: sidecar
+          builder: ${{ steps.buildx.outputs.name }}
           file: sidecar/build/controller/Dockerfile
           tags: atomix/sidecar-controller
           load: true
           push: false
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,mode=max,dest=/tmp/.buildx-cache
 
       - name: Load atomix/sidecar-controller
         run: kind load docker-image atomix/sidecar-controller
@@ -77,10 +100,13 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: controller
+          builder: ${{ steps.buildx.outputs.name }}
           file: controller/build/controller/Dockerfile
           tags: atomix/controller
           load: true
           push: false
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,mode=max,dest=/tmp/.buildx-cache
 
       - name: Load atomix/controller
         run: kind load docker-image atomix/controller
@@ -89,10 +115,13 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: controller
+          builder: ${{ steps.buildx.outputs.name }}
           file: controller/build/controller-init/Dockerfile
           tags: atomix/controller-init
           load: true
           push: false
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,mode=max,dest=/tmp/.buildx-cache
 
       - name: Load atomix/controller-init
         run: kind load docker-image atomix/controller-init
@@ -101,10 +130,13 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: stores/raft
+          builder: ${{ steps.buildx.outputs.name }}
           file: stores/raft/build/controller/Dockerfile
           tags: atomix/raft-controller
           load: true
           push: false
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,mode=max,dest=/tmp/.buildx-cache
 
       - name: Load atomix/raft-controller
         run: kind load docker-image atomix/raft-controller
@@ -113,10 +145,13 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: stores/raft
+          builder: ${{ steps.buildx.outputs.name }}
           file: stores/raft/build/node/Dockerfile
           tags: atomix/raft-node
           load: true
           push: false
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,mode=max,dest=/tmp/.buildx-cache
 
       - name: Load atomix/raft-node
         run: kind load docker-image atomix/raft-node
@@ -125,10 +160,13 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: test
+          builder: ${{ steps.buildx.outputs.name }}
           file: test/build/Dockerfile
           tags: atomix/test
           load: true
           push: false
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,mode=max,dest=/tmp/.buildx-cache
 
       - name: Load atomix/test
         run: kind load docker-image atomix/test
