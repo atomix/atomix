@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Shared memory integration tests
+name: Pod memory integration tests
 
 on:
   push:
@@ -11,8 +11,8 @@ on:
     paths:
       - 'controller/**'
       - 'sidecar/**'
-      - 'drivers/shared-memory/**'
-      - 'stores/shared-memory/**'
+      - 'drivers/pod-memory/**'
+      - 'stores/pod-memory/**'
       - 'test/**'
   pull_request:
   workflow_dispatch:
@@ -81,7 +81,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: .github/configs/shared-memory/Dockerfile
+          file: ./test/configs/pod-memory/Dockerfile
           tags: atomix/sidecar
           outputs: type=docker,dest=/tmp/sidecar.tar
 
@@ -114,7 +114,7 @@ jobs:
           name: sidecar-controller
           path: /tmp/sidecar-controller.tar
 
-  build-shared-memory-node:
+  build-pod-memory-controller:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -126,39 +126,16 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v3
         with:
-          context: stores/shared-memory
-          file: stores/shared-memory/build/node/Dockerfile
-          tags: atomix/shared-memory-node
-          outputs: type=docker,dest=/tmp/shared-memory-node.tar
+          context: stores/pod-memory
+          file: stores/pod-memory/build/controller/Dockerfile
+          tags: atomix/pod-memory-controller
+          outputs: type=docker,dest=/tmp/pod-memory-controller.tar
 
       - name: Share image
         uses: actions/upload-artifact@v3
         with:
-          name: shared-memory-node
-          path: /tmp/shared-memory-node.tar
-
-  build-shared-memory-controller:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build image
-        uses: docker/build-push-action@v3
-        with:
-          context: stores/shared-memory
-          file: stores/shared-memory/build/controller/Dockerfile
-          tags: atomix/shared-memory-controller
-          outputs: type=docker,dest=/tmp/shared-memory-controller.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: shared-memory-controller
-          path: /tmp/shared-memory-controller.tar
+          name: pod-memory-controller
+          path: /tmp/pod-memory-controller.tar
 
   build-tests:
     runs-on: ubuntu-latest
@@ -191,8 +168,7 @@ jobs:
       - build-controller-init
       - build-sidecar
       - build-sidecar-controller
-      - build-shared-memory-node
-      - build-shared-memory-controller
+      - build-pod-memory-controller
       - build-tests
 
     steps:
@@ -234,16 +210,10 @@ jobs:
           name: controller-init
           path: /tmp
 
-      - name: Fetch atomix/shared-memory-node
+      - name: Fetch atomix/pod-memory-controller
         uses: actions/download-artifact@v3
         with:
-          name: shared-memory-node
-          path: /tmp
-
-      - name: Fetch atomix/shared-memory-controller
-        uses: actions/download-artifact@v3
-        with:
-          name: shared-memory-controller
+          name: pod-memory-controller
           path: /tmp
 
       - name: Fetch atomix/test
@@ -258,8 +228,7 @@ jobs:
           kind load image-archive /tmp/controller-init.tar
           kind load image-archive /tmp/sidecar.tar
           kind load image-archive /tmp/sidecar-controller.tar
-          kind load image-archive /tmp/shared-memory-node.tar
-          kind load image-archive /tmp/shared-memory-controller.tar
+          kind load image-archive /tmp/pod-memory-controller.tar
           kind load image-archive /tmp/test.tar
 
       - name: Install core controller
@@ -269,13 +238,13 @@ jobs:
         run: helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --set image.pullPolicy=Never --wait
 
       - name: Install store controller
-        run: helm install -n kube-system atomix-shared-memory-controller ./stores/shared-memory/chart --set image.pullPolicy=Never --wait
+        run: helm install -n kube-system atomix-pod-memory-controller ./stores/pod-memory/chart --set image.pullPolicy=Never --wait
 
       - name: Setup tests
-        run: kubectl create -f .github/configs/shared-memory/setup.yaml
+        run: kubectl create -f ./test/configs/pod-memory/setup.yaml
 
       - name: Install tests
-        run: helm install test ./test/chart -f .github/configs/shared-memory/suite.yaml --set image.pullPolicy=Never --wait
+        run: helm install test ./test/chart -f ./test/configs/pod-memory/suite.yaml --set image.pullPolicy=Never --wait
 
       - name: Test Counter/v1
         run: helm test test --filter name=test-counter-v1
@@ -294,5 +263,5 @@ jobs:
           kubectl get storageprofiles
           echo "kubectl get datastores"
           kubectl get datastores
-          echo "kubectl get sharedmemorystores"
-          kubectl get sharedmemorystores
+          echo "kubectl get podmemorystores"
+          kubectl get podmemorystores
