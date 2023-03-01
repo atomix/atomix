@@ -13,11 +13,11 @@ controller-init:
 
 kind: controller-kind controller-init-kind
 
-controller-kind:
+controller-kind: controller
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/controller:latest
 
-controller-init-kind:
+controller-init-kind: controller-init
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/controller-init:latest
 
