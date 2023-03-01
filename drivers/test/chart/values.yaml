@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+timeout: 5m
+
+driver: ""
+apiVersion: ""
+
+image:
+  repository: atomix/driver-test
+  tag: ""
+  pullPolicy: ""
+  pullSecrets: []
+
+logging:
+  rootLevel: error
+  encoding: console
+  loggers:
+    github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors:
+      level: error

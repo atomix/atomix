@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    name: {{ .Release.Name }}
+    runtime.atomix.io/profile: {{ .Release.Name }}
+  annotations:
+    helm.sh/hook: test
+spec:
+  containers:
+    - name: atomix-driver-test
+      {{- if .Values.image.tag }}
+      image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+      {{- else if .Chart.AppVersion }}
+      image: {{ printf "%s:%s" .Values.image.repository .Chart.AppVersion }}
+      {{- else }}
+      image: {{ .Values.image.repository }}
+      {{- end }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      args:
+        - --driver
+        - {{ .Values.driver }}
+        - --api-version
+        - {{ .Values.apiVersion }}
+        - --timeout
+        - {{ .Values.timeout }}
+      volumeMounts:
+        - name: config
+          mountPath: /etc/atomix
+          readOnly: true
+  restartPolicy: Never
+  volumes:
+    - name: config
+      configMap:
+        name: {{ .Release.Name }}

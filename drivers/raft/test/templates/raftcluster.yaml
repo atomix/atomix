@@ -1,0 +1,16 @@
+{{- if not .Values.cluster.name }}
+apiVersion: raft.atomix.io/v1beta3
+kind: RaftCluster
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.cluster.replicas }}
+  {{- if .Values.cluster.image.tag }}
+  image: {{ printf "%s:%s" .Values.cluster.image.repository .Values.cluster.image.tag }}
+  {{- end }}
+  imagePullPolicy: {{ .Values.cluster.image.pullPolicy }}
+  {{- with .Values.cluster.persistence }}
+  persistence:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,12 @@
+apiVersion: raft.atomix.io/v1beta3
+kind: RaftStore
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  cluster:
+    name: {{ .Values.cluster.name | default .Release.Name }}
+    namespace: {{ .Values.cluster.namespace | default .Release.Namespace }}
+  partitions: {{ .Values.store.partitions }}
+  {{- if .Values.store.replicationFactor }}
+  replicationFactor: {{ .Values.store.replicationFactor }}
+  {{- end }}

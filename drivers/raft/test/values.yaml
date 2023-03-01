@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+cluster:
+  name: ""
+  namespace: ""
+  replicas: 3
+  image:
+    repository: atomix/raft-node
+    tag: ""
+    pullPolicy: ""
+    pullSecrets: []
+  persistence:
+
+store:
+  partitions: 10
+  replicationFactor: 0
+
+test:
+  driver: atomix.io/raft
+  apiVersion: v1
+  image:
+    tag: raft
