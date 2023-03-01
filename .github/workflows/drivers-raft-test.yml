@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Raft integration tests
+name: Test Raft Driver
 
 on:
   push:

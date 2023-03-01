@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Verify Integration Testing Tool
+name: Verify Driver Tests
 
 on:
   push:
@@ -21,4 +21,4 @@ jobs:
   lint:
     uses: ./.github/workflows/lint.yml
     with:
-      component: test
+      component: drivers/test
