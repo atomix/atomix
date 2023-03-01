@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - 'master'
+      - 'test'
     paths:
       - 'drivers/test/**'
   pull_request:
