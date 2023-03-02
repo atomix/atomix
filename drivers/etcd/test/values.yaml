@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+test:
+  driver: atomix.io/etcd
+  apiVersion: v3
+  image:
+    tag: etcd
+    pullPolicy: Never
+
+etcd:
+  replicaCount: 1
+  rbac:
+    enabled: false
+  auth:
+    rbac:
+      enabled: false
+      create: false
