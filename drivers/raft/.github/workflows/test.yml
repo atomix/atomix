@@ -205,7 +205,7 @@ jobs:
         run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Install store controller
-        run: helm install -n kube-system atomix-raft-controller ./stores/raft/chart --set image.pullPolicy=Never --wait
+        run: helm install -n kube-system atomix-raft-controller ./stores/raft/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Run driver tests
         run: ct install --charts ./drivers/raft/test

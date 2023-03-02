@@ -14,8 +14,8 @@ on:
       - 'test'
     paths:
       - 'drivers/raft/**'
+      - 'drivers/test/**'
       - 'stores/raft/**'
-      - 'test/**'
   pull_request:
   workflow_dispatch:
 
@@ -190,7 +190,7 @@ jobs:
           name: raft-controller
           path: /tmp
 
-      - name: Fetch atomix/test
+      - name: Fetch atomix/driver-test
         uses: actions/download-artifact@v3
         with:
           name: test
@@ -208,7 +208,7 @@ jobs:
         run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Install store controller
-        run: helm install -n kube-system atomix-raft-controller ./stores/raft/chart --set image.pullPolicy=Never --wait
+        run: helm install -n kube-system atomix-raft-controller ./stores/raft/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Run driver tests
         run: ct install --charts ./drivers/raft/test
@@ -216,19 +216,17 @@ jobs:
       - name: Record k8s status
         if: failure()
         run: |
-          echo "kubectl get pods"
-          kubectl get pods
-          echo "kubectl get pods -n kube-system"
-          kubectl get pods -n kube-system
-          echo "kubectl get storageprofiles"
-          kubectl get storageprofiles
-          echo "kubectl get datastores"
-          kubectl get datastores
-          echo "kubectl get raftclusters"
-          kubectl get raftclusters
-          echo "kubectl get raftstores"
-          kubectl get raftstores
-          echo "kubectl get raftpartitions"
-          kubectl get raftpartitions
-          echo "kubectl get raftreplicas"
-          kubectl get raftreplicas
+          echo "kubectl get pods --all-namespaces"
+          kubectl get pods --all-namespaces
+          echo "kubectl get storageprofiles --all-namespaces"
+          kubectl get storageprofiles --all-namespaces
+          echo "kubectl get datastores --all-namespaces"
+          kubectl get datastores --all-namespaces
+          echo "kubectl get raftclusters --all-namespaces"
+          kubectl get raftclusters --all-namespaces
+          echo "kubectl get raftstores --all-namespaces"
+          kubectl get raftstores --all-namespaces
+          echo "kubectl get raftpartitions --all-namespaces"
+          kubectl get raftpartitions --all-namespaces
+          echo "kubectl get raftreplicas --all-namespaces"
+          kubectl get raftreplicas --all-namespaces
