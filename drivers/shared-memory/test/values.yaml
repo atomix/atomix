@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+store:
+  image:
+    repository: atomix/shared-memory-node
+    tag: ""
+    pullPolicy: ""
+    pullSecrets: []
+
+test:
+  driver: atomix.io/shared-memory
+  apiVersion: v1
+  image:
+    tag: shared-memory
+    pullPolicy: Never
