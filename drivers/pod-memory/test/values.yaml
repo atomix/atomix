@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+test:
+  driver: atomix.io/pod-memory
+  apiVersion: v1
+  image:
+    tag: pod-memory
+    pullPolicy: Never

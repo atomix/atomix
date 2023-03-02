@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v2
+name: atomix-pod-memory-driver-tests
+description: Pod memory driver integration tests
+kubeVersion: ">=1.17.0"
+type: application
+version: 1.0.0
+keywords:
+- atomix
+- test
+home: https://atomix.io
+maintainers:
+- name: Jordan Halterman
+  email: jordan.halterman@intel.com
+dependencies:
+  - name: atomix-driver-tests
+    version: v1.0.0
+    repository: file://../../test/chart
+    alias: test
