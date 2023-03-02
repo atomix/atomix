@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+test:
+  driver: atomix.io/redis
+  apiVersion: v9
+  image:
+    tag: redis
+    pullPolicy: Never
+
+redis:
+  architecture: standalone
+  auth:
+    enabled: false
