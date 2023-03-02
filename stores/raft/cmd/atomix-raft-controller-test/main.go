@@ -98,7 +98,6 @@ func getCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringP("namespace", "n", "test", "the test namespace")
 	cmd.Flags().DurationP("timeout", "t", 10*time.Minute, "the test timeout")
 	return cmd
 }
