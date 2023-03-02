@@ -206,19 +206,17 @@ jobs:
       - name: Record k8s status
         if: failure()
         run: |
-          echo "kubectl get -n test pods"
-          kubectl get -n test pods
-          echo "kubectl get pods -n kube-system"
-          kubectl get pods -n kube-system
-          echo "kubectl get -n test storageprofiles"
-          kubectl get -n test storageprofiles
-          echo "kubectl get -n test datastores"
-          kubectl get -n test datastores
-          echo "kubectl get -n test raftclusters"
-          kubectl get -n test raftclusters
-          echo "kubectl get -n test raftstores"
-          kubectl get -n test raftstores
-          echo "kubectl get -n test raftpartitions"
-          kubectl get -n test raftpartitions
-          echo "kubectl get -n test raftreplicas"
-          kubectl get -n test raftreplicas
+          echo "kubectl get pods --all-namespaces"
+          kubectl get pods --all-namespaces
+          echo "kubectl get storageprofiles --all-namespaces"
+          kubectl get storageprofiles --all-namespaces
+          echo "kubectl get datastores --all-namespaces"
+          kubectl get datastores --all-namespaces
+          echo "kubectl get raftclusters --all-namespaces"
+          kubectl get raftclusters --all-namespaces
+          echo "kubectl get raftstores --all-namespaces"
+          kubectl get raftstores --all-namespaces
+          echo "kubectl get raftpartitions --all-namespaces"
+          kubectl get raftpartitions --all-namespaces
+          echo "kubectl get raftreplicas --all-namespaces"
+          kubectl get raftreplicas --all-namespaces

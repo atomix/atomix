@@ -211,13 +211,11 @@ jobs:
       - name: Record k8s status
         if: failure()
         run: |
-          echo "kubectl get -n test pods"
-          kubectl get -n test pods
-          echo "kubectl get pods -n kube-system"
-          kubectl get pods -n kube-system
-          echo "kubectl get -n test storageprofiles"
-          kubectl get -n test storageprofiles
-          echo "kubectl get -n test datastores"
-          kubectl get -n test datastores
-          echo "kubectl get -n test sharedmemorystores"
-          kubectl get -n test sharedmemorystores
+          echo "kubectl get -n test pods --all-namespaces"
+          kubectl get -n test pods --all-namespaces
+          echo "kubectl get -n test storageprofiles --all-namespaces"
+          kubectl get -n test storageprofiles --all-namespaces
+          echo "kubectl get -n test datastores --all-namespaces"
+          kubectl get -n test datastores --all-namespaces
+          echo "kubectl get -n test sharedmemorystores --all-namespaces"
+          kubectl get -n test sharedmemorystores --all-namespaces
