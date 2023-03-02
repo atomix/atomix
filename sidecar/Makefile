@@ -3,24 +3,32 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build: sidecar controller
-
-controller:
-	docker build . -f build/controller/Dockerfile -t atomix/sidecar-controller
+build: sidecar controller controller-test
 
 sidecar:
 	docker build . -f build/sidecar/Dockerfile -t atomix/sidecar
 
-kind: controller-kind sidecar-kind
+controller:
+	docker build . -f build/controller/Dockerfile -t atomix/sidecar-controller
 
-controller-kind:
-	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
-	kind load docker-image atomix/sidecar-controller:latest
+controller-test:
+	docker build . -f build/controller-test/Dockerfile -t atomix/sidecar-controller-test
 
-sidecar-kind:
+kind: sidecar-kind controller-kind controller-test-kind
+
+sidecar-kind: sidecar
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/sidecar:latest
 
+controller-kind: controller
+	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
+	kind load docker-image atomix/sidecar-controller:latest
+
+controller-test-kind: controller-test
+	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
+	kind load docker-image atomix/sidecar-controller-test:latest
+
 .PHONY: test
 test:
-	go test github.com/atomix/atomix/sidecar/pkg/... -p 1
+	go test github.com/atomix/atomix/sidecar/pkg/...
+	ct install --namespace kube-system --charts ./chart --helm-extra-set-args '--set image.pullPolicy=Never --set init.image.pullPolicy=Never --set test.image.pullPolicy=Never --set test.enabled=true'

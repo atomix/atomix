@@ -23,6 +23,15 @@ sidecar:
     tag: ""
     pullSecrets: []
 
+test:
+  enabled: false
+  timeout: 5m
+  image:
+    repository: atomix/sidecar-controller-test
+    tag: ""
+    pullPolicy: ""
+    pullSecrets: []
+
 logging:
   rootLevel: info
   encoding: console

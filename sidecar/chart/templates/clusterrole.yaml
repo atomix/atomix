@@ -23,9 +23,13 @@ rules:
       - namespaces
       - serviceaccounts
     verbs:
+      {{- if .Values.test.enabled }}
+      - '*'
+      {{- else }}
       - get
       - list
       - watch
+      {{- end }}
   - apiGroups:
       - policy
     resources:
