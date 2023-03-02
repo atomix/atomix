@@ -22,3 +22,4 @@ test:
   apiVersion: v1
   image:
     tag: raft
+    pullPolicy: Never
