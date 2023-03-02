@@ -12,7 +12,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY ./api ./api
-COPY ./cmd ./cmd
+COPY ./cmd/atomix-raft-node ./cmd/atomix-raft-node
 COPY ./pkg ./pkg
 
 RUN atomix build ./cmd/atomix-raft-node -o ./bin/atomix-raft-node

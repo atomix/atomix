@@ -23,7 +23,7 @@ const (
 // RaftClusterSpec specifies a RaftCluster configuration
 type RaftClusterSpec struct {
 	// Replicas is the number of raft replicas
-	Replicas uint32 `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// Image is the image to run
 	Image string `json:"image,omitempty"`
@@ -41,7 +41,7 @@ type RaftClusterSpec struct {
 	Logging LoggingConfig `json:"logging"`
 
 	// AverageRTT is the average round trip time between nodes
-	AverageRTT metav1.Duration `json:"averageRTT"`
+	AverageRTT *metav1.Duration `json:"averageRTT"`
 
 	// Persistence is the cluster persistence configuration
 	Persistence RaftClusterPersistenceSpec `json:"persistence"`
@@ -58,7 +58,7 @@ type RaftClusterPersistenceSpec struct {
 // RaftClusterStatus defines the status of a RaftCluster
 type RaftClusterStatus struct {
 	State  RaftClusterState `json:"state"`
-	Groups uint32           `json:"groups"`
+	Groups int32            `json:"groups"`
 }
 
 // +genclient

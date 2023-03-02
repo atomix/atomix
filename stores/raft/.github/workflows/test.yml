@@ -1,0 +1,225 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Test Raft Store
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'test'
+    paths:
+      - 'stores/raft/**'
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-controller:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build image
+        uses: docker/build-push-action@v3
+        with:
+          context: controller
+          file: controller/build/controller/Dockerfile
+          tags: atomix/controller
+          outputs: type=docker,dest=/tmp/controller.tar
+
+      - name: Share image
+        uses: actions/upload-artifact@v3
+        with:
+          name: controller
+          path: /tmp/controller.tar
+
+  build-controller-init:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build image
+        uses: docker/build-push-action@v3
+        with:
+          context: controller
+          file: controller/build/controller-init/Dockerfile
+          tags: atomix/controller-init
+          outputs: type=docker,dest=/tmp/controller-init.tar
+
+      - name: Share image
+        uses: actions/upload-artifact@v3
+        with:
+          name: controller-init
+          path: /tmp/controller-init.tar
+
+  build-raft-node:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build image
+        uses: docker/build-push-action@v3
+        with:
+          context: stores/raft
+          file: stores/raft/build/node/Dockerfile
+          tags: atomix/raft-node
+          outputs: type=docker,dest=/tmp/raft-node.tar
+
+      - name: Share image
+        uses: actions/upload-artifact@v3
+        with:
+          name: raft-node
+          path: /tmp/raft-node.tar
+
+  build-raft-controller:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build image
+        uses: docker/build-push-action@v3
+        with:
+          context: stores/raft
+          file: stores/raft/build/controller/Dockerfile
+          tags: atomix/raft-controller
+          outputs: type=docker,dest=/tmp/raft-controller.tar
+
+      - name: Share image
+        uses: actions/upload-artifact@v3
+        with:
+          name: raft-controller
+          path: /tmp/raft-controller.tar
+
+  build-raft-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build image
+        uses: docker/build-push-action@v3
+        with:
+          file: stores/raft/build/controller-test/Dockerfile
+          tags: atomix/raft-controller-test
+          outputs: type=docker,dest=/tmp/test.tar
+
+      - name: Share image
+        uses: actions/upload-artifact@v3
+        with:
+          name: test
+          path: /tmp/test.tar
+
+  run-tests:
+    runs-on: ubuntu-latest
+
+    needs:
+      - build-controller
+      - build-controller-init
+      - build-raft-node
+      - build-raft-controller
+      - build-raft-tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Setup Helm
+        uses: ./.github/actions/setup-helm
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.4.0
+        with:
+          cluster_name: kind
+
+      - name: Fetch atomix/controller
+        uses: actions/download-artifact@v3
+        with:
+          name: controller
+          path: /tmp
+
+      - name: Fetch atomix/controller-init
+        uses: actions/download-artifact@v3
+        with:
+          name: controller-init
+          path: /tmp
+
+      - name: Fetch atomix/raft-node
+        uses: actions/download-artifact@v3
+        with:
+          name: raft-node
+          path: /tmp
+
+      - name: Fetch atomix/raft-controller
+        uses: actions/download-artifact@v3
+        with:
+          name: raft-controller
+          path: /tmp
+
+      - name: Fetch atomix/raft-controller-test
+        uses: actions/download-artifact@v3
+        with:
+          name: test
+          path: /tmp
+
+      - name: Load Docker images
+        run: |
+          kind load image-archive /tmp/controller.tar
+          kind load image-archive /tmp/controller-init.tar
+          kind load image-archive /tmp/raft-node.tar
+          kind load image-archive /tmp/raft-controller.tar
+          kind load image-archive /tmp/test.tar
+
+      - name: Install core controller
+        run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
+
+      - name: Test Raft controller
+        run: |
+          kubectl create ns test
+          ct install --namespace kube-system --charts ./stores/raft/chart --helm-extra-set-args '--set image.pullPolicy=Never --set init.image.pullPolicy=Never --set test.image.pullPolicy=Never --set test.enabled=true'
+
+      - name: Record k8s status
+        if: failure()
+        run: |
+          echo "kubectl get -n test pods"
+          kubectl get -n test pods
+          echo "kubectl get pods -n kube-system"
+          kubectl get pods -n kube-system
+          echo "kubectl get -n test storageprofiles"
+          kubectl get -n test storageprofiles
+          echo "kubectl get -n test datastores"
+          kubectl get -n test datastores
+          echo "kubectl get -n test raftclusters"
+          kubectl get -n test raftclusters
+          echo "kubectl get -n test raftstores"
+          kubectl get -n test raftstores
+          echo "kubectl get -n test raftpartitions"
+          kubectl get -n test raftpartitions
+          echo "kubectl get -n test raftreplicas"
+          kubectl get -n test raftreplicas

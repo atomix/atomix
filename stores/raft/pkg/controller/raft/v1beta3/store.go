@@ -148,10 +148,10 @@ func (r *RaftStoreReconciler) Reconcile(ctx context.Context, request reconcile.R
 
 func (r *RaftStoreReconciler) reconcilePartitions(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster) (bool, error) {
 	if store.Status.ReplicationFactor == nil {
-		if store.Spec.ReplicationFactor != nil && *store.Spec.ReplicationFactor <= cluster.Spec.Replicas {
+		if store.Spec.ReplicationFactor != nil && *store.Spec.ReplicationFactor <= *cluster.Spec.Replicas {
 			store.Status.ReplicationFactor = store.Spec.ReplicationFactor
 		} else {
-			store.Status.ReplicationFactor = &cluster.Spec.Replicas
+			store.Status.ReplicationFactor = cluster.Spec.Replicas
 		}
 		if err := updateStatus(r.client, ctx, store, log); err != nil {
 			return false, err
@@ -160,7 +160,7 @@ func (r *RaftStoreReconciler) reconcilePartitions(ctx context.Context, log loggi
 	}
 
 	allReady := true
-	for ordinal := 1; ordinal <= int(store.Spec.Partitions); ordinal++ {
+	for ordinal := 1; ordinal <= int(*store.Spec.Partitions); ordinal++ {
 		if status, ok, err := r.reconcilePartition(ctx, log, store, cluster, raftv1beta3.PartitionID(ordinal)); err != nil {
 			return false, err
 		} else if ok {
@@ -190,7 +190,7 @@ func (r *RaftStoreReconciler) reconcilePartitions(ctx context.Context, log loggi
 }
 
 func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster, partitionID raftv1beta3.PartitionID) (raftv1beta3.RaftPartitionState, bool, error) {
-	log = log.WithFields(logging.Uint64("PartitionID", uint64(partitionID)))
+	log = log.WithFields(logging.Int64("PartitionID", int64(partitionID)))
 	partitionName := types.NamespacedName{
 		Namespace: store.Namespace,
 		Name:      fmt.Sprintf("%s-%d", store.Name, partitionID),
@@ -201,7 +201,7 @@ func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, log loggin
 	} else if !ok {
 		// Allocate new group ID by incrementing the group count in the cluster status
 		cluster.Status.Groups++
-		log.Debugw("Allocating new group", logging.Uint64("GroupID", uint64(cluster.Status.Groups)))
+		log.Debugw("Allocating new group", logging.Int64("GroupID", int64(cluster.Status.Groups)))
 		if err := updateStatus(r.client, ctx, cluster, log); err != nil {
 			return "", false, err
 		}
@@ -221,7 +221,7 @@ func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, log loggin
 		}
 
 		log.Infow("Creating RaftPartition",
-			logging.Uint64("RaftPartition", uint64(partition.Spec.GroupID)))
+			logging.Int64("RaftPartition", int64(partition.Spec.GroupID)))
 		if err := controllerutil.SetControllerReference(store, partition, r.scheme); err != nil {
 			log.Error(err)
 			return "", false, err
@@ -241,7 +241,7 @@ func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, log loggin
 func (r *RaftStoreReconciler) reconcileDataStore(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster) (bool, error) {
 	log.Debug("Reconciling DataStore")
 	var config rsmv1.ProtocolConfig
-	for ordinal := 1; ordinal <= int(store.Spec.Partitions); ordinal++ {
+	for ordinal := 1; ordinal <= int(*store.Spec.Partitions); ordinal++ {
 		partitionName := types.NamespacedName{
 			Namespace: store.Namespace,
 			Name:      fmt.Sprintf("%s-%d", store.Name, ordinal),

@@ -147,8 +147,8 @@ func (r *RaftPartitionReconciler) Reconcile(ctx context.Context, request reconci
 
 func (r *RaftPartitionReconciler) reconcilePartition(ctx context.Context, log logging.Logger, partition *raftv1beta3.RaftPartition) (reconcile.Result, error) {
 	log = log.WithFields(
-		logging.Uint64("PartitionID", uint64(partition.Spec.PartitionID)),
-		logging.Uint64("GroupID", uint64(partition.Spec.GroupID)))
+		logging.Int64("PartitionID", int64(partition.Spec.PartitionID)),
+		logging.Int64("GroupID", int64(partition.Spec.GroupID)))
 
 	cluster := &raftv1beta3.RaftCluster{}
 	clusterName := types.NamespacedName{
@@ -206,7 +206,7 @@ func (r *RaftPartitionReconciler) reconcileReplicas(ctx context.Context, log log
 }
 
 func (r *RaftPartitionReconciler) reconcileReplica(ctx context.Context, log logging.Logger, cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replicaID raftv1beta3.ReplicaID) (raftv1beta3.RaftReplicaState, bool, error) {
-	log = log.WithFields(logging.Uint64("ReplicaID", uint64(replicaID)))
+	log = log.WithFields(logging.Int64("ReplicaID", int64(replicaID)))
 	replicaName := types.NamespacedName{
 		Namespace: partition.Namespace,
 		Name:      fmt.Sprintf("%s-%d", partition.Name, replicaID),
@@ -248,7 +248,7 @@ func (r *RaftPartitionReconciler) reconcileReplica(ctx context.Context, log logg
 		default:
 			partition.Status.State = raftv1beta3.RaftPartitionReconfiguring
 			partition.Status.Members++
-			log.Debugw("Allocating new member", logging.Uint64("MemberID", uint64(partition.Status.Members)))
+			log.Debugw("Allocating new member", logging.Int64("MemberID", int64(partition.Status.Members)))
 			if err := updateStatus(r.client, ctx, partition, log); err != nil {
 				return "", false, err
 			}
@@ -260,7 +260,7 @@ func (r *RaftPartitionReconciler) reconcileReplica(ctx context.Context, log logg
 		replica.Annotations = newReplicaAnnotations(cluster, partition, replicaID, replica.Spec.MemberID)
 
 		log.Infow("Creating RaftReplica",
-			logging.Uint64("MemberID", uint64(replica.Spec.MemberID)))
+			logging.Int64("MemberID", int64(replica.Spec.MemberID)))
 		if err := controllerutil.SetControllerReference(partition, replica, r.scheme); err != nil {
 			log.Error(err)
 			return "", false, err

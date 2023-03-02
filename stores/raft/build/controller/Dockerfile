@@ -12,7 +12,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY ./api ./api
-COPY ./cmd ./cmd
+COPY ./cmd/atomix-raft-controller ./cmd/atomix-raft-controller
 COPY ./pkg ./pkg
 
 RUN atomix build ./cmd/atomix-raft-controller -o ./bin/atomix-raft-controller

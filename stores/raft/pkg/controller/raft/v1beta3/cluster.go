@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -170,11 +169,17 @@ func (r *RaftClusterReconciler) addConfigMap(ctx context.Context, log logging.Lo
 		},
 	}
 
-	sinkEncoding := logging.SinkEncoding(cluster.Spec.Logging.Encoding)
+	var sinkEncoding logging.SinkEncoding
+	if cluster.Spec.Logging.Encoding != nil {
+		sinkEncoding = logging.SinkEncoding(*cluster.Spec.Logging.Encoding)
+	} else {
+		sinkEncoding = logging.ConsoleEncoding
+	}
+
 	loggingConfig := logging.Config{
 		Loggers: map[string]logging.LoggerConfig{
 			rootLoggerName: {
-				Level:  &cluster.Spec.Logging.RootLevel,
+				Level:  cluster.Spec.Logging.RootLevel,
 				Output: loggingOutputs,
 			},
 		},
@@ -299,7 +304,7 @@ func (r *RaftClusterReconciler) addStatefulSet(ctx context.Context, log logging.
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName: getHeadlessServiceName(cluster),
-			Replicas:    pointer.Int32Ptr(int32(cluster.Spec.Replicas)),
+			Replicas:    cluster.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: newClusterSelector(cluster),
 			},

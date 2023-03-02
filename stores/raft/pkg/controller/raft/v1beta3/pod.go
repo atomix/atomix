@@ -225,7 +225,7 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 				case *raftv1.Event_LeaderUpdated:
 					r.recordReplicaEvent(ctx, log, clusterName, e.LeaderUpdated.GroupID, e.LeaderUpdated.MemberID,
 						func(status *raftv1beta3.RaftReplicaStatus) bool {
-							term := uint64(e.LeaderUpdated.Term)
+							term := int64(e.LeaderUpdated.Term)
 							if status.Term == nil || *status.Term < term || (*status.Term == term && status.Leader == nil && e.LeaderUpdated.Leader != 0) {
 								role := raftv1beta3.RaftFollower
 								if e.LeaderUpdated.Leader == 0 {
@@ -255,7 +255,7 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 						})
 					r.recordPartitionEvent(ctx, log, clusterName, e.LeaderUpdated.GroupID,
 						func(status *raftv1beta3.RaftPartitionStatus) bool {
-							term := uint64(e.LeaderUpdated.Term)
+							term := int64(e.LeaderUpdated.Term)
 							if status.Term == nil || *status.Term < term || (*status.Term == term && status.Leader == nil && e.LeaderUpdated.Leader != 0) {
 								var newLeader *corev1.LocalObjectReference
 								if e.LeaderUpdated.Leader != 0 {
@@ -321,7 +321,7 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 								e.SendSnapshotAborted.Index, clusterName.Name, e.SendSnapshotAborted.GroupID, e.SendSnapshotAborted.To)
 						})
 				case *raftv1.Event_SnapshotReceived:
-					index := uint64(e.SnapshotReceived.Index)
+					index := int64(e.SnapshotReceived.Index)
 					r.recordReplicaEvent(ctx, log, clusterName, e.SnapshotReceived.GroupID, e.SnapshotReceived.MemberID,
 						func(status *raftv1beta3.RaftReplicaStatus) bool {
 							if index > 0 && (status.LastSnapshotIndex == nil || index > *status.LastSnapshotIndex) {
@@ -336,7 +336,7 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 								clusterName.Name, e.SnapshotReceived.GroupID, e.SnapshotReceived.From, e.SnapshotReceived.Index)
 						})
 				case *raftv1.Event_SnapshotRecovered:
-					index := uint64(e.SnapshotRecovered.Index)
+					index := int64(e.SnapshotRecovered.Index)
 					r.recordReplicaEvent(ctx, log, clusterName, e.SnapshotRecovered.GroupID, e.SnapshotRecovered.MemberID,
 						func(status *raftv1beta3.RaftReplicaStatus) bool {
 							if index > 0 && (status.LastSnapshotIndex == nil || index > *status.LastSnapshotIndex) {
@@ -350,7 +350,7 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 							r.events.Eventf(replica, "Normal", "SnapshotRecovered", "Recovered from snapshot at index %d", e.SnapshotRecovered.Index)
 						})
 				case *raftv1.Event_SnapshotCreated:
-					index := uint64(e.SnapshotCreated.Index)
+					index := int64(e.SnapshotCreated.Index)
 					r.recordReplicaEvent(ctx, log, clusterName, e.SnapshotCreated.GroupID, e.SnapshotCreated.MemberID,
 						func(status *raftv1beta3.RaftReplicaStatus) bool {
 							if index > 0 && (status.LastSnapshotIndex == nil || index > *status.LastSnapshotIndex) {
@@ -364,7 +364,7 @@ func (r *PodReconciler) watch(log logging.Logger, clusterName types.NamespacedNa
 							r.events.Eventf(replica, "Normal", "SnapshotCreated", "Created snapshot at index %d", e.SnapshotCreated.Index)
 						})
 				case *raftv1.Event_SnapshotCompacted:
-					index := uint64(e.SnapshotCompacted.Index)
+					index := int64(e.SnapshotCompacted.Index)
 					r.recordReplicaEvent(ctx, log, clusterName, e.SnapshotCompacted.GroupID, e.SnapshotCompacted.MemberID,
 						func(status *raftv1beta3.RaftReplicaStatus) bool {
 							if index > 0 && (status.LastSnapshotIndex == nil || index > *status.LastSnapshotIndex) {
@@ -444,8 +444,8 @@ func (r *PodReconciler) recordReplicaEvent(
 	updater func(*raftv1beta3.RaftReplicaStatus) bool, recorder func(*raftv1beta3.RaftReplica)) {
 	_ = backoff.Retry(func() error {
 		return r.tryRecordReplicaEvent(ctx, log.WithFields(
-			logging.Uint64("GroupID", uint64(groupID)),
-			logging.Uint64("MemberID", uint64(memberID))),
+			logging.Int64("GroupID", int64(groupID)),
+			logging.Int64("MemberID", int64(memberID))),
 			clusterName, raftv1beta3.GroupID(groupID), raftv1beta3.MemberID(memberID), updater, recorder)
 	}, backoff.NewExponentialBackOff())
 }
@@ -477,7 +477,7 @@ func (r *PodReconciler) recordPartitionEvent(
 	updater func(status *raftv1beta3.RaftPartitionStatus) bool, recorder func(*raftv1beta3.RaftPartition)) {
 	_ = backoff.Retry(func() error {
 		return r.tryRecordPartitionEvent(ctx,
-			log.WithFields(logging.Uint64("GroupID", uint64(groupID))),
+			log.WithFields(logging.Int64("GroupID", int64(groupID))),
 			clusterName, raftv1beta3.GroupID(groupID), updater, recorder)
 	}, backoff.NewExponentialBackOff())
 }

@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/atomix/atomix/api v1.1.0
-	github.com/atomix/atomix/controller v1.0.0
+	github.com/atomix/atomix/controller v1.0.1-0.20230301233247-275080a3c6af
 	github.com/atomix/atomix/protocols/rsm v1.1.1
 	github.com/atomix/atomix/runtime v1.1.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
@@ -12,6 +12,7 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/lni/dragonboat/v3 v3.3.5
 	github.com/spf13/cobra v1.4.0
+	github.com/stretchr/testify v1.8.0
 	google.golang.org/grpc v1.46.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.24.0
@@ -74,6 +75,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.12.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect

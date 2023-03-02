@@ -19,13 +19,13 @@ const (
 	RaftPartitionReady         RaftPartitionState = "Ready"
 )
 
-type PartitionID uint64
+type PartitionID int64
 
-type GroupID uint64
+type GroupID int64
 
 // RaftPartitionSpec specifies a RaftPartitionSpec configuration
 type RaftPartitionSpec struct {
-	Replicas    uint32      `json:"replicas"`
+	Replicas    int32       `json:"replicas"`
 	PartitionID PartitionID `json:"partitionID"`
 	GroupID     GroupID     `json:"groupID"`
 }
@@ -33,10 +33,10 @@ type RaftPartitionSpec struct {
 // RaftPartitionStatus defines the status of a RaftPartition
 type RaftPartitionStatus struct {
 	State     RaftPartitionState            `json:"state,omitempty"`
-	Term      *uint64                       `json:"term,omitempty"`
+	Term      *int64                        `json:"term,omitempty"`
 	Leader    *corev1.LocalObjectReference  `json:"leader,omitempty"`
 	Followers []corev1.LocalObjectReference `json:"followers,omitempty"`
-	Members   uint32                        `json:"members"`
+	Members   int32                         `json:"members"`
 }
 
 // +genclient

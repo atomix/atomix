@@ -39,9 +39,9 @@ const (
 	RaftFollower RaftReplicaRole = "Follower"
 )
 
-type ReplicaID uint64
+type ReplicaID int64
 
-type MemberID uint64
+type MemberID int64
 
 type RaftReplicaSpec struct {
 	GroupID   GroupID                     `json:"groupID"`
@@ -49,7 +49,7 @@ type RaftReplicaSpec struct {
 	MemberID  MemberID                    `json:"memberID"`
 	Pod       corev1.LocalObjectReference `json:"pod"`
 	Type      RaftReplicaType             `json:"type"`
-	Peers     uint32                      `json:"peers"`
+	Peers     int32                       `json:"peers"`
 	Join      bool                        `json:"join"`
 }
 
@@ -60,9 +60,9 @@ type RaftReplicaStatus struct {
 	State             RaftReplicaState             `json:"state,omitempty"`
 	Role              *RaftReplicaRole             `json:"role,omitempty"`
 	Leader            *corev1.LocalObjectReference `json:"leader,omitempty"`
-	Term              *uint64                      `json:"term,omitempty"`
+	Term              *int64                       `json:"term,omitempty"`
 	LastUpdated       *metav1.Time                 `json:"lastUpdated,omitempty"`
-	LastSnapshotIndex *uint64                      `json:"lastSnapshotIndex,omitempty"`
+	LastSnapshotIndex *int64                       `json:"lastSnapshotIndex,omitempty"`
 	LastSnapshotTime  *metav1.Time                 `json:"lastSnapshotTime,omitempty"`
 }
 

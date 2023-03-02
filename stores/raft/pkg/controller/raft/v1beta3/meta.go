@@ -57,7 +57,11 @@ func getClusterPodDNSName(cluster *raftv1beta3.RaftCluster, name string) string 
 }
 
 func getReplicaPodOrdinal(cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replicaID raftv1beta3.ReplicaID) int {
-	return (int(partition.Spec.Replicas)*int(partition.Spec.GroupID) + (int(replicaID) - 1)) % int(cluster.Spec.Replicas)
+	replicas := 1
+	if cluster.Spec.Replicas != nil {
+		replicas = int(*cluster.Spec.Replicas)
+	}
+	return (int(partition.Spec.Replicas)*int(partition.Spec.GroupID) + (int(replicaID) - 1)) % replicas
 }
 
 func getReplicaPodName(cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replicaID raftv1beta3.ReplicaID) string {

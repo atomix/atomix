@@ -10,8 +10,8 @@ import (
 
 // RaftConfig is the configuration of a Raft group
 type RaftConfig struct {
-	ElectionRTT        *uint64            `json:"electionRTT,omitempty"`
-	HeartbeatRTT       *uint64            `json:"heartbeatRTT,omitempty"`
+	ElectionRTT        *int64             `json:"electionRTT,omitempty"`
+	HeartbeatRTT       *int64             `json:"heartbeatRTT,omitempty"`
 	SnapshotEntries    *int64             `json:"snapshotEntries,omitempty"`
 	CompactionOverhead *int64             `json:"compactionOverhead,omitempty"`
 	MaxInMemLogSize    *resource.Quantity `json:"maxInMemLogSize,omitempty"`
@@ -19,8 +19,8 @@ type RaftConfig struct {
 
 // LoggingConfig logging configuration
 type LoggingConfig struct {
-	Encoding  string         `json:"encoding"`
-	RootLevel string         `json:"rootLevel"`
+	Encoding  *string        `json:"encoding"`
+	RootLevel *string        `json:"rootLevel"`
 	Loggers   []LoggerConfig `json:"loggers"`
 }
 

@@ -173,10 +173,10 @@ func (r *RaftReplicaReconciler) reconcileCreate(ctx context.Context, log logging
 	}
 
 	log = log.WithFields(
-		logging.Uint64("PartitionID", uint64(partition.Spec.PartitionID)),
-		logging.Uint64("GroupID", uint64(partition.Spec.GroupID)),
-		logging.Uint64("ReplicaID", uint64(replica.Spec.ReplicaID)),
-		logging.Uint64("MemberID", uint64(replica.Spec.MemberID)),
+		logging.Int64("PartitionID", int64(partition.Spec.PartitionID)),
+		logging.Int64("GroupID", int64(partition.Spec.GroupID)),
+		logging.Int64("ReplicaID", int64(replica.Spec.ReplicaID)),
+		logging.Int64("MemberID", int64(replica.Spec.MemberID)),
 		logging.Stringer("Pod", podName))
 	if ok, err := r.addReplica(ctx, log, store, cluster, partition, pod, replica); err != nil {
 		return err
@@ -300,10 +300,10 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 
 		var config raftv1.RaftConfig
 		if store.Spec.ElectionRTT != nil {
-			config.ElectionRTT = *store.Spec.ElectionRTT
+			config.ElectionRTT = uint64(*store.Spec.ElectionRTT)
 		}
 		if store.Spec.HeartbeatRTT != nil {
-			config.ElectionRTT = *store.Spec.HeartbeatRTT
+			config.ElectionRTT = uint64(*store.Spec.HeartbeatRTT)
 		}
 		if store.Spec.SnapshotEntries != nil {
 			config.SnapshotEntries = uint64(*store.Spec.SnapshotEntries)

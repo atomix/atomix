@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2022-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.test.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ template "atomix-raft-controller.fullname" . }}-test
+  labels:
+    name: {{ template "atomix-raft-controller.fullname" . }}-test
+  annotations:
+    helm.sh/hook: test
+spec:
+  serviceAccountName: {{ template "atomix-raft-controller.fullname" . }}
+  containers:
+    - name: atomix-raft-test
+      {{- if .Values.test.image.tag }}
+      image: {{ printf "%s:%s" .Values.test.image.repository .Values.test.image.tag }}
+      {{- else if .Chart.AppVersion }}
+      image: {{ printf "%s:%s" .Values.test.image.repository .Chart.AppVersion }}
+      {{- else }}
+      image: {{ .Values.test.image.repository }}
+      {{- end }}
+      imagePullPolicy: {{ .Values.test.image.pullPolicy }}
+      args:
+        - --timeout
+        - {{ .Values.test.timeout }}
+      env:
+        - name: TEST_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+  restartPolicy: Never
+{{- end }}
