@@ -11,7 +11,7 @@ COPY go.mod go.sum ./
 
 RUN go mod download
 
-COPY ./cmd ./cmd
+COPY ./cmd/atomix-shared-memory-controller ./cmd/atomix-shared-memory-controller
 COPY ./pkg ./pkg
 
 RUN atomix build ./cmd/atomix-shared-memory-controller -o ./bin/atomix-shared-memory-controller

@@ -51,7 +51,7 @@ const (
 	defaultImagePullPolicyEnv   = "DEFAULT_NODE_IMAGE_PULL_POLICY"
 	defaultImage                = "atomix/shared-memory-node:latest"
 	appLabel                    = "app"
-	storeLabel                  = "store"
+	storeLabel                  = "sharedmemory.atomix.io/store"
 	appAtomix                   = "atomix"
 	nodeContainerName           = "atomix-shared-memory-node"
 	sharedMemoryStoreAnnotation = "sharedmemory.atomix.io/store"

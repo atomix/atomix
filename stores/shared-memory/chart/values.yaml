@@ -24,6 +24,15 @@ node:
     pullPolicy: ""
     pullSecrets: []
 
+test:
+  enabled: false
+  timeout: 5m
+  image:
+    repository: atomix/shared-memory-controller-test
+    tag: ""
+    pullPolicy: ""
+    pullSecrets: []
+
 logging:
   rootLevel: info
   encoding: console
