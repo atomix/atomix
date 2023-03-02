@@ -8,7 +8,6 @@ on:
   push:
     branches:
       - 'master'
-      - 'test'
     paths:
       - 'drivers/raft/**'
       - 'drivers/test/**'

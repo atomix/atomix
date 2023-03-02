@@ -8,7 +8,6 @@ on:
   push:
     branches:
       - 'master'
-      - 'test'
     paths:
       - 'stores/shared-memory/**'
   pull_request:
