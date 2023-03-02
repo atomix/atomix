@@ -31,7 +31,7 @@ controller-test-kind: controller-test
 .PHONY: test
 test:
 	go test github.com/atomix/atomix/stores/raft/pkg/...
-	ct install --charts ./chart
+	ct install --namespace kube-system --charts ./chart --helm-extra-set-args '--set image.pullPolicy=Never --set init.image.pullPolicy=Never --set test.image.pullPolicy=Never --set test.enabled=true'
 
 .PHONY: api
 api:

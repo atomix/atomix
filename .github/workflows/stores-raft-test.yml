@@ -126,6 +126,7 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v3
         with:
+          context: stores/raft
           file: stores/raft/build/controller-test/Dockerfile
           tags: atomix/raft-controller-test
           outputs: type=docker,dest=/tmp/test.tar
@@ -203,9 +204,7 @@ jobs:
         run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Test Raft controller
-        run: |
-          kubectl create ns test
-          ct install --namespace kube-system --charts ./stores/raft/chart --helm-extra-set-args '--set image.pullPolicy=Never --set init.image.pullPolicy=Never --set test.image.pullPolicy=Never --set test.enabled=true'
+        run: ct install --namespace kube-system --charts ./stores/raft/chart --helm-extra-set-args '--set image.pullPolicy=Never --set init.image.pullPolicy=Never --set test.image.pullPolicy=Never --set test.enabled=true'
 
       - name: Record k8s status
         if: failure()
