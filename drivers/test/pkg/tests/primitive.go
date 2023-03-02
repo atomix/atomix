@@ -27,9 +27,8 @@ type PrimitiveTesting interface {
 
 type PrimitiveTests struct {
 	suite.Suite
-	id     runtimev1.PrimitiveID
-	ctx    context.Context
-	cancel context.CancelFunc
+	id  runtimev1.PrimitiveID
+	ctx context.Context
 }
 
 func (t *PrimitiveTests) SetID(id runtimev1.PrimitiveID) {
