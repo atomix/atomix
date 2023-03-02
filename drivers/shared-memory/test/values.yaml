@@ -6,7 +6,7 @@ store:
   image:
     repository: atomix/shared-memory-node
     tag: ""
-    pullPolicy: ""
+    pullPolicy: Never
     pullSecrets: []
 
 test:

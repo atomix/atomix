@@ -9,7 +9,7 @@ cluster:
   image:
     repository: atomix/raft-node
     tag: ""
-    pullPolicy: ""
+    pullPolicy: Never
     pullSecrets: []
   persistence:
 

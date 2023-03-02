@@ -141,6 +141,9 @@ func (t *TestSuite) TestSingleReplicaCluster() {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "single-replica",
 		},
+		Spec: v1beta3.RaftClusterSpec{
+			ImagePullPolicy: corev1.PullNever,
+		},
 	}, metav1.CreateOptions{})
 	t.NoError(err)
 
@@ -208,7 +211,8 @@ func (t *TestSuite) TestMultiReplicaCluster() {
 			Name: "multi-replica",
 		},
 		Spec: v1beta3.RaftClusterSpec{
-			Replicas: pointer.Int32(3),
+			Replicas:        pointer.Int32(3),
+			ImagePullPolicy: corev1.PullNever,
 		},
 	}, metav1.CreateOptions{})
 	t.NoError(err)
@@ -280,7 +284,8 @@ func (t *TestSuite) TestStoreReplicationFactor() {
 			Name: "replication-factor",
 		},
 		Spec: v1beta3.RaftClusterSpec{
-			Replicas: pointer.Int32(5),
+			Replicas:        pointer.Int32(5),
+			ImagePullPolicy: corev1.PullNever,
 		},
 	}, metav1.CreateOptions{})
 	t.NoError(err)
