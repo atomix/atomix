@@ -27,9 +27,13 @@ rules:
     resources:
       - namespaces
     verbs:
+      {{- if .Values.test.enabled }}
+      - '*'
+      {{- else }}
       - get
       - list
       - watch
+      {{- end }}
   - apiGroups:
       - apps
     resources:

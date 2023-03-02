@@ -17,6 +17,15 @@ init:
     pullPolicy: ""
     pullSecrets: []
 
+test:
+  enabled: false
+  timeout: 5m
+  image:
+    repository: atomix/pod-memory-controller-test
+    tag: ""
+    pullPolicy: ""
+    pullSecrets: []
+
 logging:
   rootLevel: info
   encoding: console

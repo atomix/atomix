@@ -11,7 +11,7 @@ COPY go.mod go.sum ./
 
 RUN go mod download
 
-COPY ./cmd ./cmd
+COPY ./cmd/atomix-pod-memory-controller ./cmd/atomix-pod-memory-controller
 COPY ./pkg ./pkg
 
 RUN atomix build ./cmd/atomix-pod-memory-controller -o ./bin/atomix-pod-memory-controller
