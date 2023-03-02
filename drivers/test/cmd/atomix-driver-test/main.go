@@ -71,11 +71,15 @@ func getCommand() *cobra.Command {
 			tests := []testing.InternalTest{
 				{
 					Name: "Counter",
-					F:    tests.NewTestFunc(tests.NewCounterTests(rt), timeout),
+					F: func(t *testing.T) {
+						tests.Run(t, tests.NewCounterTests(rt), timeout)
+					},
 				},
 				{
 					Name: "Map",
-					F:    tests.NewTestFunc(tests.NewMapTests(rt), timeout),
+					F: func(t *testing.T) {
+						tests.Run(t, tests.NewMapTests(rt), timeout)
+					},
 				},
 			}
 

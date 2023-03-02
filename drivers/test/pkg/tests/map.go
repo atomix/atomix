@@ -77,7 +77,8 @@ func (t *MapTests) TestPutVersion() {
 		PrevVersion: prevVersion,
 	})
 	t.NoError(err)
-	t.Nil(putResponse.PrevValue)
+	t.NotNil(putResponse.PrevValue)
+	t.Equal("bar", string(putResponse.PrevValue.Value))
 	t.NotEqual(prevVersion, putResponse.Version)
 
 	_, err = t.Put(t.Context(), &mapv1.PutRequest{

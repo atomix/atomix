@@ -63,7 +63,7 @@ func (t *CounterTests) TestSet() {
 		Value: -1,
 	})
 	t.NoError(err)
-	t.Equal(int64(1), setResponse.Value)
+	t.Equal(int64(-1), setResponse.Value)
 
 	getResponse, err = t.Get(t.Context(), &counterv1.GetRequest{
 		ID: t.ID(),
@@ -72,9 +72,10 @@ func (t *CounterTests) TestSet() {
 	t.Equal(int64(-1), getResponse.Value)
 }
 
-func (t *CounterTests) TestIncrement() {
+func (t *CounterTests) TestIncrement1() {
 	incResponse, err := t.Increment(t.Context(), &counterv1.IncrementRequest{
-		ID: t.ID(),
+		ID:    t.ID(),
+		Delta: 1,
 	})
 	t.NoError(err)
 	t.Equal(int64(1), incResponse.Value)
@@ -86,7 +87,8 @@ func (t *CounterTests) TestIncrement() {
 	t.Equal(int64(1), getResponse.Value)
 
 	incResponse, err = t.Increment(t.Context(), &counterv1.IncrementRequest{
-		ID: t.ID(),
+		ID:    t.ID(),
+		Delta: 1,
 	})
 	t.NoError(err)
 	t.Equal(int64(2), incResponse.Value)
@@ -123,12 +125,13 @@ func (t *CounterTests) TestIncrementDelta() {
 		ID: t.ID(),
 	})
 	t.NoError(err)
-	t.Equal(int64(-20), getResponse.Value)
+	t.Equal(int64(-10), getResponse.Value)
 }
 
-func (t *CounterTests) TestDecrement() {
+func (t *CounterTests) TestDecrement1() {
 	decResponse, err := t.Decrement(t.Context(), &counterv1.DecrementRequest{
-		ID: t.ID(),
+		ID:    t.ID(),
+		Delta: 1,
 	})
 	t.NoError(err)
 	t.Equal(int64(-1), decResponse.Value)
@@ -140,7 +143,8 @@ func (t *CounterTests) TestDecrement() {
 	t.Equal(int64(-1), getResponse.Value)
 
 	decResponse, err = t.Decrement(t.Context(), &counterv1.DecrementRequest{
-		ID: t.ID(),
+		ID:    t.ID(),
+		Delta: 1,
 	})
 	t.NoError(err)
 	t.Equal(int64(-2), decResponse.Value)
@@ -177,5 +181,5 @@ func (t *CounterTests) TestDecrementDelta() {
 		ID: t.ID(),
 	})
 	t.NoError(err)
-	t.Equal(int64(20), getResponse.Value)
+	t.Equal(int64(10), getResponse.Value)
 }
