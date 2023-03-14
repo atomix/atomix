@@ -10,7 +10,7 @@ name: Release Atomix chart
 on:
   push:
     tags:
-      - 'chart/v*'
+      - 'v*'
 
 concurrency:
   group: release
