@@ -35,4 +35,3 @@ jobs:
     uses: ./.github/workflows/lint.yml
     with:
       component: bench
-      chart: chart
