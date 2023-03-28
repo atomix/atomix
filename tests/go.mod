@@ -1,4 +1,4 @@
-module github.com/atomix/atomix/test
+module github.com/atomix/atomix/tests
 
 go 1.19
 

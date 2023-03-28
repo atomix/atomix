@@ -9,7 +9,7 @@ on:
     branches:
       - 'master'
     paths:
-      - 'test/**'
+      - 'tests/**'
   pull_request:
   workflow_dispatch:
 
@@ -19,19 +19,11 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    - name: Setup Go environment
-      uses: ./.github/actions/setup-go
-
-    - name: Run tests
-      run: go test ./...
-      working-directory: test
+    uses: ./.github/workflows/test.yml
+    with:
+      component: tests
 
   lint:
     uses: ./.github/workflows/lint.yml
     with:
-      component: test
+      component: tests
