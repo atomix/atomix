@@ -20,11 +20,3 @@ runs:
       uses: azure/setup-helm@v3
       with:
         version: v3.10.0
-
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-        check-latest: true
-
-    - name: Set up chart-testing
-      uses: helm/chart-testing-action@v2.3.1
