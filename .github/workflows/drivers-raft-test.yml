@@ -251,7 +251,7 @@ jobs:
         working-directory: drivers/raft/tests
         run: |
           helmit test ./... \
-            --context ../../.. \
+            --context ${{ github.workspace }} \
             --namespace test \
             --create-namespace \
             --label sidecar.atomix.io/inject=true \

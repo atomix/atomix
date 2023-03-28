@@ -10,6 +10,7 @@ import (
 	atomixv3beta4 "github.com/atomix/atomix/controller/pkg/client/clientset/versioned/typed/atomix/v3beta4"
 	"github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta3"
 	raftv1beta3 "github.com/atomix/atomix/stores/raft/pkg/client/clientset/versioned/typed/raft/v1beta3"
+	"github.com/onosproject/helmit/pkg/helm"
 	"github.com/onosproject/helmit/pkg/test"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,6 +22,7 @@ type RaftStoreTestSuite struct {
 	test.Suite
 	*atomixv3beta4.AtomixV3beta4Client
 	*raftv1beta3.RaftV1beta3Client
+	release *helm.Release
 }
 
 func (t *RaftStoreTestSuite) SetupSuite(ctx context.Context) {
@@ -31,6 +33,19 @@ func (t *RaftStoreTestSuite) SetupSuite(ctx context.Context) {
 	raftV1beta3Client, err := raftv1beta3.NewForConfig(t.Config())
 	t.NoError(err)
 	t.RaftV1beta3Client = raftV1beta3Client
+
+	release, err := t.Helm().
+		Install("atomix-raft-controller", "./stores/raft/chart").
+		Set("image.pullPolicy", "Never").
+		Set("init.image.pullPolicy", "Never").
+		Wait().
+		Get(ctx)
+	t.NoError(err)
+	t.release = release
+}
+
+func (t *RaftStoreTestSuite) TearDownSuite(ctx context.Context) {
+	t.NoError(t.Helm().Uninstall(t.release.Name).Do(ctx))
 }
 
 func (t *RaftStoreTestSuite) TestSingleReplicaCluster(ctx context.Context) {

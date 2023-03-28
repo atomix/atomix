@@ -176,7 +176,7 @@ jobs:
         working-directory: stores/raft/tests
         run: |
           helmit test ./... \
-            --context ../../.. \
+            --context ${{ github.workspace }} \
             --namespace test \
             --create-namespace \
             --verbose
