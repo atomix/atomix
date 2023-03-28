@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - 'master'
+      - 'helmit'
     paths:
       - 'stores/raft/**'
   pull_request:
