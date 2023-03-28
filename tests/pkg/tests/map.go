@@ -18,23 +18,26 @@ type MapTestSuite struct {
 func (s *MapTestSuite) SetupSuite(ctx context.Context) {
 	s.PrimitiveTestSuite.SetupSuite(ctx)
 	s.MapClient = mapv1.NewMapClient(s.conn)
+}
+
+func (s *MapTestSuite) SetupTest(ctx context.Context) {
+	s.PrimitiveTestSuite.SetupTest(ctx)
 	_, err := s.Create(ctx, &mapv1.CreateRequest{
-		ID: s.id,
+		ID: s.ID,
 	})
 	s.NoError(err)
 }
 
-func (s *MapTestSuite) TearDownSuite(ctx context.Context) {
+func (s *MapTestSuite) TearDownTest(ctx context.Context) {
 	_, err := s.Close(ctx, &mapv1.CloseRequest{
-		ID: s.id,
+		ID: s.ID,
 	})
 	s.NoError(err)
-	s.PrimitiveTestSuite.TearDownSuite(ctx)
 }
 
 func (s *MapTestSuite) TestPut(ctx context.Context) {
 	putResponse, err := s.Put(ctx, &mapv1.PutRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
@@ -42,7 +45,7 @@ func (s *MapTestSuite) TestPut(ctx context.Context) {
 	s.Nil(putResponse.PrevValue)
 
 	getResponse, err := s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.NoError(err)
@@ -55,7 +58,7 @@ func (s *MapTestSuite) TestPutTTL(ctx context.Context) {
 
 func (s *MapTestSuite) TestPutVersion(ctx context.Context) {
 	putResponse, err := s.Put(ctx, &mapv1.PutRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
@@ -67,7 +70,7 @@ func (s *MapTestSuite) TestPutVersion(ctx context.Context) {
 
 	prevVersion := putResponse.Version
 	putResponse, err = s.Put(ctx, &mapv1.PutRequest{
-		ID:          s.id,
+		ID:          s.ID,
 		Key:         "foo",
 		Value:       []byte("baz"),
 		PrevVersion: prevVersion,
@@ -78,7 +81,7 @@ func (s *MapTestSuite) TestPutVersion(ctx context.Context) {
 	s.NotEqual(prevVersion, putResponse.Version)
 
 	_, err = s.Put(ctx, &mapv1.PutRequest{
-		ID:          s.id,
+		ID:          s.ID,
 		Key:         "foo",
 		Value:       []byte("baz"),
 		PrevVersion: putResponse.Version - 1,
@@ -88,21 +91,21 @@ func (s *MapTestSuite) TestPutVersion(ctx context.Context) {
 
 func (s *MapTestSuite) TestInsert(ctx context.Context) {
 	_, err := s.Insert(ctx, &mapv1.InsertRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
 	s.NoError(err)
 
 	_, err = s.Insert(ctx, &mapv1.InsertRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("baz"),
 	})
 	s.ErrorAlreadyExists(err)
 
 	getResponse, err := s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.NoError(err)
@@ -115,28 +118,28 @@ func (s *MapTestSuite) TestInsertTTL(ctx context.Context) {
 
 func (s *MapTestSuite) TestPutUpdate(ctx context.Context) {
 	_, err := s.Update(ctx, &mapv1.UpdateRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
 	s.ErrorNotFound(err)
 
 	_, err = s.Put(ctx, &mapv1.PutRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
 	s.NoError(err)
 
 	_, err = s.Update(ctx, &mapv1.UpdateRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("baz"),
 	})
 	s.NoError(err)
 
 	getResponse, err := s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.NoError(err)
@@ -145,28 +148,28 @@ func (s *MapTestSuite) TestPutUpdate(ctx context.Context) {
 
 func (s *MapTestSuite) TestInsertUpdate(ctx context.Context) {
 	_, err := s.Update(ctx, &mapv1.UpdateRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
 	s.ErrorNotFound(err)
 
 	_, err = s.Insert(ctx, &mapv1.InsertRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
 	s.NoError(err)
 
 	_, err = s.Update(ctx, &mapv1.UpdateRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("baz"),
 	})
 	s.NoError(err)
 
 	getResponse, err := s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.NoError(err)
@@ -179,14 +182,14 @@ func (s *MapTestSuite) TestUpdateTTL(ctx context.Context) {
 
 func (s *MapTestSuite) TestPutUpdateVersion(ctx context.Context) {
 	_, err := s.Update(ctx, &mapv1.UpdateRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
 	s.ErrorNotFound(err)
 
 	putResponse, err := s.Put(ctx, &mapv1.PutRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
@@ -196,7 +199,7 @@ func (s *MapTestSuite) TestPutUpdateVersion(ctx context.Context) {
 	}
 
 	updateResponse, err := s.Update(ctx, &mapv1.UpdateRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("baz"),
 	})
@@ -205,7 +208,7 @@ func (s *MapTestSuite) TestPutUpdateVersion(ctx context.Context) {
 	s.Equal(putResponse.Version, updateResponse.PrevValue.Version)
 
 	getResponse, err := s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.NoError(err)
@@ -215,14 +218,14 @@ func (s *MapTestSuite) TestPutUpdateVersion(ctx context.Context) {
 
 func (s *MapTestSuite) TestInsertUpdateVersion(ctx context.Context) {
 	_, err := s.Update(ctx, &mapv1.UpdateRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
 	s.ErrorNotFound(err)
 
 	insertResponse, err := s.Insert(ctx, &mapv1.InsertRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
@@ -232,7 +235,7 @@ func (s *MapTestSuite) TestInsertUpdateVersion(ctx context.Context) {
 	}
 
 	updateResponse, err := s.Update(ctx, &mapv1.UpdateRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("baz"),
 	})
@@ -241,7 +244,7 @@ func (s *MapTestSuite) TestInsertUpdateVersion(ctx context.Context) {
 	s.Equal(insertResponse.Version, updateResponse.PrevValue.Version)
 
 	getResponse, err := s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.NoError(err)
@@ -251,20 +254,20 @@ func (s *MapTestSuite) TestInsertUpdateVersion(ctx context.Context) {
 
 func (s *MapTestSuite) TestPutRemove(ctx context.Context) {
 	_, err := s.Remove(ctx, &mapv1.RemoveRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.ErrorNotFound(err)
 
 	putResponse, err := s.Put(ctx, &mapv1.PutRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
 	s.NoError(err)
 
 	removeResponse, err := s.Remove(ctx, &mapv1.RemoveRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.NoError(err)
@@ -272,7 +275,7 @@ func (s *MapTestSuite) TestPutRemove(ctx context.Context) {
 	s.Equal(putResponse.Version, removeResponse.Value.Version)
 
 	_, err = s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.ErrorNotFound(err)
@@ -280,20 +283,20 @@ func (s *MapTestSuite) TestPutRemove(ctx context.Context) {
 
 func (s *MapTestSuite) TestInsertRemove(ctx context.Context) {
 	_, err := s.Remove(ctx, &mapv1.RemoveRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.ErrorNotFound(err)
 
 	insertResponse, err := s.Insert(ctx, &mapv1.InsertRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
 	s.NoError(err)
 
 	removeResponse, err := s.Remove(ctx, &mapv1.RemoveRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.NoError(err)
@@ -301,7 +304,7 @@ func (s *MapTestSuite) TestInsertRemove(ctx context.Context) {
 	s.Equal(insertResponse.Version, removeResponse.Value.Version)
 
 	_, err = s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.ErrorNotFound(err)
@@ -313,13 +316,13 @@ func (s *MapTestSuite) TestRemoveTTL(ctx context.Context) {
 
 func (s *MapTestSuite) TestPutRemoveVersion(ctx context.Context) {
 	_, err := s.Remove(ctx, &mapv1.RemoveRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.ErrorNotFound(err)
 
 	putResponse, err := s.Put(ctx, &mapv1.PutRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
@@ -329,7 +332,7 @@ func (s *MapTestSuite) TestPutRemoveVersion(ctx context.Context) {
 	}
 
 	removeResponse, err := s.Remove(ctx, &mapv1.RemoveRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.NoError(err)
@@ -337,7 +340,7 @@ func (s *MapTestSuite) TestPutRemoveVersion(ctx context.Context) {
 	s.Equal(putResponse.Version, removeResponse.Value.Version)
 
 	_, err = s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.ErrorNotFound(err)
@@ -345,13 +348,13 @@ func (s *MapTestSuite) TestPutRemoveVersion(ctx context.Context) {
 
 func (s *MapTestSuite) TestInsertRemoveVersion(ctx context.Context) {
 	_, err := s.Remove(ctx, &mapv1.RemoveRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.ErrorNotFound(err)
 
 	insertResponse, err := s.Insert(ctx, &mapv1.InsertRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
@@ -361,7 +364,7 @@ func (s *MapTestSuite) TestInsertRemoveVersion(ctx context.Context) {
 	}
 
 	removeResponse, err := s.Remove(ctx, &mapv1.RemoveRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.NoError(err)
@@ -369,7 +372,7 @@ func (s *MapTestSuite) TestInsertRemoveVersion(ctx context.Context) {
 	s.Equal(insertResponse.Version, removeResponse.Value.Version)
 
 	_, err = s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.ErrorNotFound(err)
@@ -377,33 +380,33 @@ func (s *MapTestSuite) TestInsertRemoveVersion(ctx context.Context) {
 
 func (s *MapTestSuite) TestPutSize(ctx context.Context) {
 	sizeResponse, err := s.Size(ctx, &mapv1.SizeRequest{
-		ID: s.id,
+		ID: s.ID,
 	})
 	s.NoError(err)
 	s.Equal(uint32(0), sizeResponse.Size_)
 
 	_, err = s.Put(ctx, &mapv1.PutRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
 	s.NoError(err)
 
 	sizeResponse, err = s.Size(ctx, &mapv1.SizeRequest{
-		ID: s.id,
+		ID: s.ID,
 	})
 	s.NoError(err)
 	s.Equal(uint32(1), sizeResponse.Size_)
 
 	_, err = s.Put(ctx, &mapv1.PutRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "bar",
 		Value: []byte("baz"),
 	})
 	s.NoError(err)
 
 	sizeResponse, err = s.Size(ctx, &mapv1.SizeRequest{
-		ID: s.id,
+		ID: s.ID,
 	})
 	s.NoError(err)
 	s.Equal(uint32(2), sizeResponse.Size_)
@@ -411,33 +414,33 @@ func (s *MapTestSuite) TestPutSize(ctx context.Context) {
 
 func (s *MapTestSuite) TestInsertSize(ctx context.Context) {
 	sizeResponse, err := s.Size(ctx, &mapv1.SizeRequest{
-		ID: s.id,
+		ID: s.ID,
 	})
 	s.NoError(err)
 	s.Equal(uint32(0), sizeResponse.Size_)
 
 	_, err = s.Insert(ctx, &mapv1.InsertRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
 	s.NoError(err)
 
 	sizeResponse, err = s.Size(ctx, &mapv1.SizeRequest{
-		ID: s.id,
+		ID: s.ID,
 	})
 	s.NoError(err)
 	s.Equal(uint32(1), sizeResponse.Size_)
 
 	_, err = s.Insert(ctx, &mapv1.InsertRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "bar",
 		Value: []byte("baz"),
 	})
 	s.NoError(err)
 
 	sizeResponse, err = s.Size(ctx, &mapv1.SizeRequest{
-		ID: s.id,
+		ID: s.ID,
 	})
 	s.NoError(err)
 	s.Equal(uint32(2), sizeResponse.Size_)
@@ -445,32 +448,32 @@ func (s *MapTestSuite) TestInsertSize(ctx context.Context) {
 
 func (s *MapTestSuite) TestPutClear(ctx context.Context) {
 	_, err := s.Put(ctx, &mapv1.PutRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
 	s.NoError(err)
 
 	_, err = s.Put(ctx, &mapv1.PutRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "bar",
 		Value: []byte("baz"),
 	})
 	s.NoError(err)
 
 	_, err = s.Clear(ctx, &mapv1.ClearRequest{
-		ID: s.id,
+		ID: s.ID,
 	})
 	s.NoError(err)
 
 	_, err = s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.ErrorNotFound(err)
 
 	_, err = s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "bar",
 	})
 	s.ErrorNotFound(err)
@@ -478,32 +481,32 @@ func (s *MapTestSuite) TestPutClear(ctx context.Context) {
 
 func (s *MapTestSuite) TestInsertClear(ctx context.Context) {
 	_, err := s.Insert(ctx, &mapv1.InsertRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "foo",
 		Value: []byte("bar"),
 	})
 	s.NoError(err)
 
 	_, err = s.Insert(ctx, &mapv1.InsertRequest{
-		ID:    s.id,
+		ID:    s.ID,
 		Key:   "bar",
 		Value: []byte("baz"),
 	})
 	s.NoError(err)
 
 	_, err = s.Clear(ctx, &mapv1.ClearRequest{
-		ID: s.id,
+		ID: s.ID,
 	})
 	s.NoError(err)
 
 	_, err = s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "foo",
 	})
 	s.ErrorNotFound(err)
 
 	_, err = s.Get(ctx, &mapv1.GetRequest{
-		ID:  s.id,
+		ID:  s.ID,
 		Key: "bar",
 	})
 	s.ErrorNotFound(err)

@@ -18,14 +18,11 @@ import (
 
 type PrimitiveTestSuite struct {
 	test.Suite
-	id   runtimev1.PrimitiveID
 	conn *grpc.ClientConn
+	ID   runtimev1.PrimitiveID
 }
 
 func (s *PrimitiveTestSuite) SetupSuite(ctx context.Context) {
-	s.id = runtimev1.PrimitiveID{
-		Name: petname.Generate(2, "-"),
-	}
 	conn, err := grpc.DialContext(ctx, "127.0.0.1:5678",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainUnaryInterceptor(
@@ -40,6 +37,12 @@ func (s *PrimitiveTestSuite) SetupSuite(ctx context.Context) {
 
 func (s *PrimitiveTestSuite) TearDownSuite(ctx context.Context) {
 	s.NoError(s.conn.Close())
+}
+
+func (s *PrimitiveTestSuite) SetupTest(ctx context.Context) {
+	s.ID = runtimev1.PrimitiveID{
+		Name: petname.Generate(2, "-"),
+	}
 }
 
 func (s *PrimitiveTestSuite) Supported(err error) bool {
