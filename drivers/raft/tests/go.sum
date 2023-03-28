@@ -81,8 +81,8 @@ github.com/atomix/atomix/controller v1.0.1-0.20230301233247-275080a3c6af h1:bjpn
 github.com/atomix/atomix/controller v1.0.1-0.20230301233247-275080a3c6af/go.mod h1:y2eGC8VoqCZw7wB8MgSO4LZxrK9rWLvBLH2S9uuX8/I=
 github.com/atomix/atomix/stores/raft v0.7.1-0.20230314010507-dd4da27ce84f h1:Q+q5WWCDGyrI4PomNIK+a5H0ah/GwqEOfGRRQxuYGdA=
 github.com/atomix/atomix/stores/raft v0.7.1-0.20230314010507-dd4da27ce84f/go.mod h1:sl6t0CCQ9sA1PnJzV//EApFMPPoFXwwZlrmfL8gLGhs=
-github.com/atomix/atomix/tests v0.0.0-20230328120633-fdb36a65b096 h1:GRTITlXlR+cx6GCa0ugvpO0E8LTzJPJl6jKGotvzjCY=
-github.com/atomix/atomix/tests v0.0.0-20230328120633-fdb36a65b096/go.mod h1:tg2AHOFVkMRV5dgGHH/4iNq4rkFgMIVGlRMB/4J/llM=
+github.com/atomix/atomix/tests v0.0.0-20230328124641-9f22c2e6c1a1 h1:Oo2iuMcTo8ZEGJZbNsZqgkUwBUea9O0gwiuGhPuyNec=
+github.com/atomix/atomix/tests v0.0.0-20230328124641-9f22c2e6c1a1/go.mod h1:tg2AHOFVkMRV5dgGHH/4iNq4rkFgMIVGlRMB/4J/llM=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=

@@ -4,9 +4,10 @@ go 1.19
 
 require (
 	github.com/atomix/atomix/stores/raft v0.7.1-0.20230314010507-dd4da27ce84f
-	github.com/atomix/atomix/tests v0.0.0-20230328120633-fdb36a65b096
+	github.com/atomix/atomix/tests v0.0.0-20230328124641-9f22c2e6c1a1
 	k8s.io/api v0.26.0
 	k8s.io/apimachinery v0.26.0
+	k8s.io/client-go v0.26.0
 )
 
 require (
@@ -115,7 +116,6 @@ require (
 	k8s.io/apiextensions-apiserver v0.26.0 // indirect
 	k8s.io/apiserver v0.26.0 // indirect
 	k8s.io/cli-runtime v0.26.0 // indirect
-	k8s.io/client-go v0.26.0 // indirect
 	k8s.io/component-base v0.26.0 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
@@ -134,7 +134,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
-	github.com/onosproject/helmit v0.6.21-0.20230327175649-41e4726658d1
+	github.com/onosproject/helmit v0.6.21-0.20230327175649-41e4726658d1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
