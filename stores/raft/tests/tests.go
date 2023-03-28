@@ -23,7 +23,7 @@ type RaftStoreTestSuite struct {
 	*raftv1beta3.RaftV1beta3Client
 }
 
-func (t *RaftStoreTestSuite) SetupTestSuite(ctx context.Context) {
+func (t *RaftStoreTestSuite) SetupSuite(ctx context.Context) {
 	atomixV3beta4Client, err := atomixv3beta4.NewForConfig(t.Config())
 	t.NoError(err)
 	t.AtomixV3beta4Client = atomixV3beta4Client
