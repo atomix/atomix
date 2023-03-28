@@ -22,3 +22,4 @@ runs:
 
     - name: Install Helmit
       run: go install github.com/onosproject/helmit@51531be
+      shell: bash

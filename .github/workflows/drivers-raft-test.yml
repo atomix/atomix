@@ -236,13 +236,16 @@ jobs:
           kind load image-archive /tmp/sidecar.tar
 
       - name: Install core controller
-        run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
+        run: |
+          helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Install sidecar controller
-        run: helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
+        run: |
+          helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Install store controller
-        run: helm install -n kube-system atomix-raft-controller ./stores/raft/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
+        run: |
+          helm install -n kube-system atomix-raft-controller ./stores/raft/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Run driver tests
         working-directory: drivers/raft/tests
