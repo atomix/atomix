@@ -71,7 +71,7 @@ func (s *raftTestSuite) setup(ctx context.Context, namespace string, config *res
 			Routes: []v3beta4.Route{
 				{
 					Store: corev1.ObjectReference{
-						Name: "etcd",
+						Name: "raft",
 					},
 				},
 			},
