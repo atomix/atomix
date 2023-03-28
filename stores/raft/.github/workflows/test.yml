@@ -110,29 +110,6 @@ jobs:
           name: raft-controller
           path: /tmp/raft-controller.tar
 
-  build-raft-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build image
-        uses: docker/build-push-action@v3
-        with:
-          context: stores/raft
-          file: stores/raft/build/controller-test/Dockerfile
-          tags: atomix/raft-controller-test
-          outputs: type=docker,dest=/tmp/test.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: test
-          path: /tmp/test.tar
-
   run-tests:
     runs-on: ubuntu-latest
 
@@ -141,7 +118,6 @@ jobs:
       - build-controller-init
       - build-raft-node
       - build-raft-controller
-      - build-raft-tests
 
     steps:
       - name: Checkout
@@ -152,6 +128,9 @@ jobs:
 
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
+
+      - name: Setup Helmit
+        uses: ./.github/actions/setup-helmit
 
       - name: Create kind cluster
         uses: helm/kind-action@v1.4.0
@@ -182,25 +161,24 @@ jobs:
           name: raft-controller
           path: /tmp
 
-      - name: Fetch atomix/raft-controller-test
-        uses: actions/download-artifact@v3
-        with:
-          name: test
-          path: /tmp
-
       - name: Load Docker images
         run: |
           kind load image-archive /tmp/controller.tar
           kind load image-archive /tmp/controller-init.tar
           kind load image-archive /tmp/raft-node.tar
           kind load image-archive /tmp/raft-controller.tar
-          kind load image-archive /tmp/test.tar
 
       - name: Install core controller
         run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Test Raft controller
-        run: ct install --namespace kube-system --charts ./stores/raft/chart --helm-extra-args '--timeout=10m' --helm-extra-set-args '--set image.pullPolicy=Never --set init.image.pullPolicy=Never --set test.image.pullPolicy=Never --set test.enabled=true'
+        working-directory: stores/raft/tests
+        run: |
+          helmit test ./... \
+            --context ../../.. \
+            --namespace test \
+            --create-namespace \
+            --verbose
 
       - name: Record k8s status
         if: failure()
