@@ -11,6 +11,7 @@ import (
 	petname "github.com/dustinkirkland/golang-petname"
 	"github.com/onosproject/helmit/pkg/test"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type PrimitiveTestSuite struct {
@@ -23,7 +24,7 @@ func (s *PrimitiveTestSuite) SetupSuite(ctx context.Context) {
 	s.id = runtimev1.PrimitiveID{
 		Name: petname.Generate(2, "-"),
 	}
-	conn, err := grpc.DialContext(ctx, "127.0.0.1:5678")
+	conn, err := grpc.DialContext(ctx, "127.0.0.1:5678", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	s.NoError(err)
 	s.conn = conn
 }
