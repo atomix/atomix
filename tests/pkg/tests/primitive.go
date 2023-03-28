@@ -8,9 +8,11 @@ import (
 	"context"
 	"github.com/atomix/atomix/api/errors"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
+	"github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors"
 	petname "github.com/dustinkirkland/golang-petname"
 	"github.com/onosproject/helmit/pkg/test"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
@@ -24,7 +26,14 @@ func (s *PrimitiveTestSuite) SetupSuite(ctx context.Context) {
 	s.id = runtimev1.PrimitiveID{
 		Name: petname.Generate(2, "-"),
 	}
-	conn, err := grpc.DialContext(ctx, "127.0.0.1:5678", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.DialContext(ctx, "127.0.0.1:5678",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithChainUnaryInterceptor(
+			interceptors.ErrorHandlingUnaryClientInterceptor(),
+			interceptors.RetryingUnaryClientInterceptor(interceptors.WithRetryOn(codes.Unavailable))),
+		grpc.WithChainStreamInterceptor(
+			interceptors.ErrorHandlingStreamClientInterceptor(),
+			interceptors.RetryingStreamClientInterceptor(interceptors.WithRetryOn(codes.Unavailable))))
 	s.NoError(err)
 	s.conn = conn
 }
