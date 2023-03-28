@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/atomix/atomix/stores/raft v0.7.1-0.20230314010507-dd4da27ce84f
-	github.com/atomix/atomix/tests v0.0.0-20230328130328-0c12dbbfa922
+	github.com/atomix/atomix/tests v0.0.0-20230328165957-402bf3f3669f
 	k8s.io/api v0.26.0
 	k8s.io/apimachinery v0.26.0
 	k8s.io/client-go v0.26.0
