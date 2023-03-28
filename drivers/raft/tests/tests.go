@@ -11,24 +11,27 @@ import (
 	"github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta3"
 	raftv1beta3 "github.com/atomix/atomix/stores/raft/pkg/client/clientset/versioned/typed/raft/v1beta3"
 	"github.com/atomix/atomix/tests/pkg/tests"
-	"github.com/onosproject/helmit/pkg/test"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 )
 
 type raftTestSuite struct {
-	test.Suite
 	*atomixv3beta4.AtomixV3beta4Client
 	*raftv1beta3.RaftV1beta3Client
 }
 
-func (s *raftTestSuite) SetupSuite(ctx context.Context) {
-	atomixV3beta4Client, err := atomixv3beta4.NewForConfig(s.Config())
-	s.NoError(err)
+func (s *raftTestSuite) setup(ctx context.Context, namespace string, config *rest.Config) error {
+	atomixV3beta4Client, err := atomixv3beta4.NewForConfig(config)
+	if err != nil {
+		return err
+	}
 	s.AtomixV3beta4Client = atomixV3beta4Client
 
-	raftV1beta3Client, err := raftv1beta3.NewForConfig(s.Config())
-	s.NoError(err)
+	raftV1beta3Client, err := raftv1beta3.NewForConfig(config)
+	if err != nil {
+		return err
+	}
 	s.RaftV1beta3Client = raftV1beta3Client
 
 	raftCluster := &v1beta3.RaftCluster{
@@ -40,8 +43,10 @@ func (s *raftTestSuite) SetupSuite(ctx context.Context) {
 			ImagePullPolicy: corev1.PullNever,
 		},
 	}
-	_, err = s.RaftClusters(s.Namespace()).Create(ctx, raftCluster, metav1.CreateOptions{})
-	s.NoError(err)
+	_, err = s.RaftClusters(namespace).Create(ctx, raftCluster, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
 
 	raftStore := &v1beta3.RaftStore{
 		ObjectMeta: metav1.ObjectMeta{
@@ -53,8 +58,10 @@ func (s *raftTestSuite) SetupSuite(ctx context.Context) {
 			},
 		},
 	}
-	_, err = s.RaftStores(s.Namespace()).Create(ctx, raftStore, metav1.CreateOptions{})
-	s.NoError(err)
+	_, err = s.RaftStores(namespace).Create(ctx, raftStore, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
 
 	storageProfile := &v3beta4.StorageProfile{
 		ObjectMeta: metav1.ObjectMeta{
@@ -70,14 +77,27 @@ func (s *raftTestSuite) SetupSuite(ctx context.Context) {
 			},
 		},
 	}
-	_, err = s.StorageProfiles(s.Namespace()).Create(ctx, storageProfile, metav1.CreateOptions{})
-	s.NoError(err)
+	_, err = s.StorageProfiles(namespace).Create(ctx, storageProfile, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (s *raftTestSuite) TearDownSuite(ctx context.Context) {
-	s.NoError(s.StorageProfiles(s.Namespace()).Delete(ctx, "raft", metav1.DeleteOptions{}))
-	s.NoError(s.RaftStores(s.Namespace()).Delete(ctx, "raft", metav1.DeleteOptions{}))
-	s.NoError(s.RaftClusters(s.Namespace()).Delete(ctx, "raft", metav1.DeleteOptions{}))
+func (s *raftTestSuite) tearDown(ctx context.Context, namespace string) error {
+	err := s.StorageProfiles(namespace).Delete(ctx, "raft", metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+	err = s.RaftStores(namespace).Delete(ctx, "raft", metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+	err = s.RaftClusters(namespace).Delete(ctx, "raft", metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 type CounterTestSuite struct {
@@ -86,13 +106,13 @@ type CounterTestSuite struct {
 }
 
 func (s *CounterTestSuite) SetupSuite(ctx context.Context) {
-	s.raftTestSuite.SetupSuite(ctx)
+	s.NoError(s.raftTestSuite.setup(ctx, s.Namespace(), s.Config()))
 	s.CounterTestSuite.SetupSuite(ctx)
 }
 
 func (s *CounterTestSuite) TearDownSuite(ctx context.Context) {
 	s.CounterTestSuite.TearDownSuite(ctx)
-	s.raftTestSuite.TearDownSuite(ctx)
+	s.NoError(s.raftTestSuite.tearDown(ctx, s.Namespace()))
 }
 
 type MapTestSuite struct {
@@ -101,11 +121,11 @@ type MapTestSuite struct {
 }
 
 func (s *MapTestSuite) SetupSuite(ctx context.Context) {
-	s.raftTestSuite.SetupSuite(ctx)
+	s.NoError(s.raftTestSuite.setup(ctx, s.Namespace(), s.Config()))
 	s.MapTestSuite.SetupSuite(ctx)
 }
 
 func (s *MapTestSuite) TearDownSuite(ctx context.Context) {
 	s.MapTestSuite.TearDownSuite(ctx)
-	s.raftTestSuite.TearDownSuite(ctx)
+	s.NoError(s.raftTestSuite.tearDown(ctx, s.Namespace()))
 }
