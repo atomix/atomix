@@ -11,11 +11,12 @@ import (
 
 type CounterTestSuite struct {
 	PrimitiveTestSuite
-	counterv1.CounterServer
+	counterv1.CounterClient
 }
 
 func (s *CounterTestSuite) SetupSuite(ctx context.Context) {
 	s.PrimitiveTestSuite.SetupSuite(ctx)
+	s.CounterClient = counterv1.NewCounterClient(s.conn)
 	_, err := s.Create(ctx, &counterv1.CreateRequest{
 		ID: s.id,
 	})
@@ -27,6 +28,7 @@ func (s *CounterTestSuite) TearDownSuite(ctx context.Context) {
 		ID: s.id,
 	})
 	s.NoError(err)
+	s.PrimitiveTestSuite.TearDownSuite(ctx)
 }
 
 func (s *CounterTestSuite) TestDefault(ctx context.Context) {

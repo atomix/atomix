@@ -10,17 +10,26 @@ import (
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	petname "github.com/dustinkirkland/golang-petname"
 	"github.com/onosproject/helmit/pkg/test"
+	"google.golang.org/grpc"
 )
 
 type PrimitiveTestSuite struct {
 	test.Suite
-	id runtimev1.PrimitiveID
+	id   runtimev1.PrimitiveID
+	conn *grpc.ClientConn
 }
 
 func (s *PrimitiveTestSuite) SetupSuite(ctx context.Context) {
 	s.id = runtimev1.PrimitiveID{
 		Name: petname.Generate(2, "-"),
 	}
+	conn, err := grpc.DialContext(ctx, "127.0.0.1:5678")
+	s.NoError(err)
+	s.conn = conn
+}
+
+func (s *PrimitiveTestSuite) TearDownSuite(ctx context.Context) {
+	s.NoError(s.conn.Close())
 }
 
 func (s *PrimitiveTestSuite) Supported(err error) bool {

@@ -12,11 +12,12 @@ import (
 
 type MapTestSuite struct {
 	PrimitiveTestSuite
-	mapv1.MapServer
+	mapv1.MapClient
 }
 
 func (s *MapTestSuite) SetupSuite(ctx context.Context) {
 	s.PrimitiveTestSuite.SetupSuite(ctx)
+	s.MapClient = mapv1.NewMapClient(s.conn)
 	_, err := s.Create(ctx, &mapv1.CreateRequest{
 		ID: s.id,
 	})
@@ -28,6 +29,7 @@ func (s *MapTestSuite) TearDownSuite(ctx context.Context) {
 		ID: s.id,
 	})
 	s.NoError(err)
+	s.PrimitiveTestSuite.TearDownSuite(ctx)
 }
 
 func (s *MapTestSuite) TestPut(ctx context.Context) {
