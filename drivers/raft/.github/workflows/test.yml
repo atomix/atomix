@@ -125,6 +125,7 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v3
         with:
+          context: sidecar
           file: sidecar/build/controller/Dockerfile
           tags: atomix/sidecar-controller
           outputs: type=docker,dest=/tmp/sidecar-controller.tar
