@@ -10,7 +10,6 @@ import (
 	atomixv3beta4 "github.com/atomix/atomix/controller/pkg/client/clientset/versioned/typed/atomix/v3beta4"
 	"github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta3"
 	raftv1beta3 "github.com/atomix/atomix/stores/raft/pkg/client/clientset/versioned/typed/raft/v1beta3"
-	"github.com/onosproject/helmit/pkg/helm"
 	"github.com/onosproject/helmit/pkg/test"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +21,6 @@ type RaftStoreTestSuite struct {
 	test.Suite
 	*atomixv3beta4.AtomixV3beta4Client
 	*raftv1beta3.RaftV1beta3Client
-	release *helm.Release
 }
 
 func (t *RaftStoreTestSuite) SetupSuite(ctx context.Context) {
@@ -33,19 +31,116 @@ func (t *RaftStoreTestSuite) SetupSuite(ctx context.Context) {
 	raftV1beta3Client, err := raftv1beta3.NewForConfig(t.Config())
 	t.NoError(err)
 	t.RaftV1beta3Client = raftV1beta3Client
-
-	release, err := t.Helm().
-		Install("atomix-raft-controller", "./stores/raft/chart").
-		Set("image.pullPolicy", "Never").
-		Set("init.image.pullPolicy", "Never").
-		Wait().
-		Get(ctx)
-	t.NoError(err)
-	t.release = release
 }
 
-func (t *RaftStoreTestSuite) TearDownSuite(ctx context.Context) {
-	t.NoError(t.Helm().Uninstall(t.release.Name).Do(ctx))
+func (t *RaftStoreTestSuite) TestRecreate(ctx context.Context) {
+	t.T().Log("Create RaftCluster recreate")
+	_, err := t.RaftClusters(t.Namespace()).Create(ctx, &v1beta3.RaftCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "recreate",
+		},
+		Spec: v1beta3.RaftClusterSpec{
+			ImagePullPolicy: corev1.PullNever,
+		},
+	}, metav1.CreateOptions{})
+	t.NoError(err)
+
+	t.T().Log("Await RaftCluster recreate ready")
+	t.AwaitClusterReady(ctx, "recreate")
+
+	pods, err := t.CoreV1().Pods(t.Namespace()).List(ctx, metav1.ListOptions{
+		LabelSelector: "raft.atomix.io/cluster=recreate",
+	})
+	t.NoError(err)
+	if t.Len(pods.Items, 1) {
+		t.True(pods.Items[0].Status.ContainerStatuses[0].Ready)
+	}
+
+	_, err = t.RaftStores(t.Namespace()).Create(ctx, &v1beta3.RaftStore{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "recreate",
+		},
+		Spec: v1beta3.RaftStoreSpec{
+			Cluster: corev1.ObjectReference{
+				Name: "recreate",
+			},
+			Partitions: pointer.Int32(1),
+		},
+	}, metav1.CreateOptions{})
+	t.NoError(err)
+
+	t.T().Log("Await RaftStore recreate ready")
+	t.AwaitStoreReady(ctx, "recreate")
+
+	err = t.RaftStores(t.Namespace()).Delete(ctx, "recreate", metav1.DeleteOptions{})
+	t.NoError(err)
+
+	err = t.RaftClusters(t.Namespace()).Delete(ctx, "recreate", metav1.DeleteOptions{})
+	t.NoError(err)
+
+	t.T().Log("Create RaftCluster recreate")
+	_, err = t.RaftClusters(t.Namespace()).Create(ctx, &v1beta3.RaftCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "recreate",
+		},
+		Spec: v1beta3.RaftClusterSpec{
+			ImagePullPolicy: corev1.PullNever,
+		},
+	}, metav1.CreateOptions{})
+	t.NoError(err)
+
+	t.T().Log("Await RaftCluster recreate ready")
+	t.AwaitClusterReady(ctx, "recreate")
+
+	pods, err = t.CoreV1().Pods(t.Namespace()).List(ctx, metav1.ListOptions{
+		LabelSelector: "raft.atomix.io/cluster=recreate",
+	})
+	t.NoError(err)
+	if t.Len(pods.Items, 1) {
+		t.True(pods.Items[0].Status.ContainerStatuses[0].Ready)
+	}
+
+	_, err = t.RaftStores(t.Namespace()).Create(ctx, &v1beta3.RaftStore{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "recreate",
+		},
+		Spec: v1beta3.RaftStoreSpec{
+			Cluster: corev1.ObjectReference{
+				Name: "recreate",
+			},
+			Partitions: pointer.Int32(1),
+		},
+	}, metav1.CreateOptions{})
+	t.NoError(err)
+
+	t.T().Log("Await RaftStore recreate ready")
+	t.AwaitStoreReady(ctx, "recreate")
+
+	partitions, err := t.RaftPartitions(t.Namespace()).List(ctx, metav1.ListOptions{
+		LabelSelector: "raft.atomix.io/store=recreate",
+	})
+	t.NoError(err)
+	if t.Len(partitions.Items, 1) {
+		t.Equal(v1beta3.RaftPartitionReady, partitions.Items[0].Status.State)
+	}
+
+	replicas, err := t.RaftReplicas(t.Namespace()).List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("raft.atomix.io/store=recreate,raft.atomix.io/partition-id=%d", partitions.Items[0].Spec.PartitionID),
+	})
+	t.NoError(err)
+	if t.Len(replicas.Items, 1) {
+		t.Equal(v1beta3.RaftReplicaReady, replicas.Items[0].Status.State)
+	}
+
+	partitionPods := make(map[string]bool)
+	for _, replica := range replicas.Items {
+		partitionPods[replica.Spec.Pod.Name] = true
+	}
+	t.Len(partitionPods, 1)
+
+	dataStore, err := t.DataStores(t.Namespace()).Get(ctx, "recreate", metav1.GetOptions{})
+	t.NoError(err)
+	t.NotEmpty(dataStore.Spec.Config.Raw)
 }
 
 func (t *RaftStoreTestSuite) TestSingleReplicaCluster(ctx context.Context) {

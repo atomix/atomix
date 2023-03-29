@@ -149,6 +149,18 @@ spec:
               type: object
               default: {}
               properties:
+                cluster:
+                  type: object
+                  required:
+                    - name
+                    - uid
+                  properties:
+                    namespace:
+                      type: string
+                    name:
+                      type: string
+                    uid:
+                      type: string
                 state:
                   type: string
                   default: Initializing

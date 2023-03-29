@@ -226,10 +226,6 @@ func (r *RaftStoreReconciler) reconcilePartition(ctx context.Context, log loggin
 			log.Error(err)
 			return "", false, err
 		}
-		if err := controllerutil.SetOwnerReference(cluster, partition, r.scheme); err != nil {
-			log.Error(err)
-			return "", false, err
-		}
 		if err := create(r.client, ctx, partition, log); err != nil {
 			return "", false, err
 		}

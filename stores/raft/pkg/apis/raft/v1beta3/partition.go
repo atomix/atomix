@@ -32,6 +32,7 @@ type RaftPartitionSpec struct {
 
 // RaftPartitionStatus defines the status of a RaftPartition
 type RaftPartitionStatus struct {
+	Cluster   *corev1.ObjectReference       `json:"cluster,omitempty"`
 	State     RaftPartitionState            `json:"state,omitempty"`
 	Term      *int64                        `json:"term,omitempty"`
 	Leader    *corev1.LocalObjectReference  `json:"leader,omitempty"`

@@ -191,6 +191,26 @@ func (r *RaftReplicaReconciler) reconcileDelete(ctx context.Context, log logging
 		return nil
 	}
 
+	partitionName := types.NamespacedName{
+		Namespace: replica.Namespace,
+		Name:      fmt.Sprintf("%s-%s", replica.Annotations[raftStoreKey], replica.Annotations[raftPartitionIDKey]),
+	}
+	partition := &raftv1beta3.RaftPartition{}
+	if err := r.client.Get(ctx, partitionName, partition); err != nil {
+		if !k8serrors.IsNotFound(err) {
+			log.Error(err)
+			return err
+		}
+		log.Debug(err)
+		log.Debugf("Removing %s finalizer", raftReplicaIDKey)
+		removeFinalizer(replica, raftReplicaIDKey)
+		return update(r.client, ctx, replica, log)
+	} else if !isOwner(partition, replica) {
+		log.Debugf("Removing %s finalizer", raftReplicaIDKey)
+		removeFinalizer(replica, raftReplicaIDKey)
+		return update(r.client, ctx, replica, log)
+	}
+
 	storeName := types.NamespacedName{
 		Namespace: replica.Namespace,
 		Name:      replica.Annotations[raftStoreKey],
@@ -202,6 +222,10 @@ func (r *RaftReplicaReconciler) reconcileDelete(ctx context.Context, log logging
 			return err
 		}
 		log.Debug(err)
+		log.Debugf("Removing %s finalizer", raftReplicaIDKey)
+		removeFinalizer(replica, raftReplicaIDKey)
+		return update(r.client, ctx, replica, log)
+	} else if !isOwner(store, partition) {
 		log.Debugf("Removing %s finalizer", raftReplicaIDKey)
 		removeFinalizer(replica, raftReplicaIDKey)
 		return update(r.client, ctx, replica, log)
@@ -221,19 +245,7 @@ func (r *RaftReplicaReconciler) reconcileDelete(ctx context.Context, log logging
 		log.Debugf("Removing %s finalizer", raftReplicaIDKey)
 		removeFinalizer(replica, raftReplicaIDKey)
 		return update(r.client, ctx, replica, log)
-	}
-
-	partitionName := types.NamespacedName{
-		Namespace: replica.Namespace,
-		Name:      fmt.Sprintf("%s-%s", storeName.Name, replica.Annotations[raftPartitionIDKey]),
-	}
-	partition := &raftv1beta3.RaftPartition{}
-	if err := r.client.Get(ctx, partitionName, partition); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			log.Error(err)
-			return err
-		}
-		log.Debug(err)
+	} else if !isOwner(cluster, partition) {
 		log.Debugf("Removing %s finalizer", raftReplicaIDKey)
 		removeFinalizer(replica, raftReplicaIDKey)
 		return update(r.client, ctx, replica, log)
@@ -266,7 +278,17 @@ func (r *RaftReplicaReconciler) reconcileDelete(ctx context.Context, log logging
 }
 
 func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, pod *corev1.Pod, replica *raftv1beta3.RaftReplica) (bool, error) {
-	if replica.Status.PodRef == nil || replica.Status.PodRef.UID != pod.UID {
+	if replica.Status.PodRef == nil {
+		replica.Status.PodRef = &corev1.ObjectReference{
+			APIVersion: pod.APIVersion,
+			Kind:       pod.Kind,
+			Namespace:  pod.Namespace,
+			Name:       pod.Name,
+			UID:        pod.UID,
+		}
+		replica.Status.Version = nil
+		return true, updateStatus(r.client, ctx, replica, log)
+	} else if replica.Status.PodRef.UID != pod.UID {
 		log.Info("Pod UID has changed; reverting replica status")
 		replica.Status.PodRef = &corev1.ObjectReference{
 			APIVersion: pod.APIVersion,
@@ -531,6 +553,11 @@ func (r *RaftReplicaReconciler) removeReplica(ctx context.Context, log logging.L
 		}
 		log.Infow("RaftReplica status changed", logging.String("Status", string(replica.Status.State)))
 		r.events.Eventf(replica, "Normal", "StateChanged", "State changed to %s", replica.Status.State)
+		return true, nil
+	}
+
+	if replica.Status.PodRef == nil || replica.Status.PodRef.UID != pod.UID {
+		log.Info("Pod UID does not match; skipping RaftReplica removal")
 		return true, nil
 	}
 

@@ -173,7 +173,24 @@ jobs:
           kind load image-archive /tmp/raft-controller.tar
 
       - name: Install core controller
-        run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
+        run: |
+          helm install \
+            atomix-controller \
+            ./controller/chart \
+            -n kube-system \
+            --set image.pullPolicy=Never \
+            --set init.image.pullPolicy=Never \
+            --wait
+
+      - name: Install Raft controller
+        run: |
+          helm install \
+            atomix-raft-controller \
+            ./stores/raft/chart \
+            -n kube-system \
+            --set image.pullPolicy=Never \
+            --set init.image.pullPolicy=Never \
+            --wait
 
       - name: Test Raft controller
         working-directory: stores/raft/tests

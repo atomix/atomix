@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/atomix/atomix/runtime/pkg/logging"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -161,6 +162,19 @@ func (r *RaftPartitionReconciler) reconcilePartition(ctx context.Context, log lo
 		return reconcile.Result{}, nil
 	}
 
+	if partition.Status.Cluster == nil || partition.Status.Cluster.UID != cluster.UID {
+		partition.Status.Cluster = &corev1.ObjectReference{
+			Namespace: cluster.Namespace,
+			Name:      cluster.Name,
+			UID:       cluster.UID,
+		}
+		partition.Status.State = raftv1beta3.RaftPartitionInitializing
+		if err := updateStatus(r.client, ctx, partition, log); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
+	}
+
 	if ok, err := r.reconcileReplicas(ctx, log, cluster, partition); err != nil {
 		return reconcile.Result{}, err
 	} else if ok {
@@ -186,23 +200,31 @@ func (r *RaftPartitionReconciler) reconcileReplicas(ctx context.Context, log log
 	case raftv1beta3.RaftPartitionInitializing:
 		partition.Status.State = raftv1beta3.RaftPartitionRunning
 		partition.Status.Members = partition.Spec.Replicas
+		log.Infow("Partition status changed", logging.String("Status", string(partition.Status.State)))
+		if err := updateStatus(r.client, ctx, partition, log); err != nil {
+			return false, err
+		}
+		return true, nil
 	case raftv1beta3.RaftPartitionReconfiguring, raftv1beta3.RaftPartitionRunning:
-		if !allReady {
-			return false, nil
-		}
-		partition.Status.State = raftv1beta3.RaftPartitionReady
-	case raftv1beta3.RaftPartitionReady:
 		if allReady {
-			return false, nil
+			partition.Status.State = raftv1beta3.RaftPartitionReady
+			log.Infow("Partition status changed", logging.String("Status", string(partition.Status.State)))
+			if err := updateStatus(r.client, ctx, partition, log); err != nil {
+				return false, err
+			}
+			return true, nil
 		}
-		partition.Status.State = raftv1beta3.RaftPartitionRunning
+	case raftv1beta3.RaftPartitionReady:
+		if !allReady {
+			partition.Status.State = raftv1beta3.RaftPartitionRunning
+			log.Infow("Partition status changed", logging.String("Status", string(partition.Status.State)))
+			if err := updateStatus(r.client, ctx, partition, log); err != nil {
+				return false, err
+			}
+			return true, nil
+		}
 	}
-
-	log.Infow("Partition status changed", logging.String("Status", string(partition.Status.State)))
-	if err := updateStatus(r.client, ctx, partition, log); err != nil {
-		return false, err
-	}
-	return true, nil
+	return false, nil
 }
 
 func (r *RaftPartitionReconciler) reconcileReplica(ctx context.Context, log logging.Logger, cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replicaID raftv1beta3.ReplicaID) (raftv1beta3.RaftReplicaState, bool, error) {
@@ -215,6 +237,18 @@ func (r *RaftPartitionReconciler) reconcileReplica(ctx context.Context, log logg
 	if ok, err := get(r.client, ctx, replicaName, replica, log); err != nil {
 		return "", false, err
 	} else if !ok {
+		statefulSetName := types.NamespacedName{
+			Namespace: cluster.Namespace,
+			Name:      cluster.Name,
+		}
+		statefulSet := &appsv1.StatefulSet{}
+		if ok, err := get(r.client, ctx, statefulSetName, statefulSet, log); err != nil {
+			return "", false, err
+		} else if !ok || !isOwner(cluster, statefulSet) {
+			log.Warnf("StatefulSet not found for RaftCluster %s", statefulSetName)
+			return "", true, nil
+		}
+
 		podName := types.NamespacedName{
 			Namespace: cluster.Namespace,
 			Name:      getReplicaPodName(cluster, partition, replicaID),
@@ -222,7 +256,8 @@ func (r *RaftPartitionReconciler) reconcileReplica(ctx context.Context, log logg
 		pod := &corev1.Pod{}
 		if ok, err := get(r.client, ctx, podName, pod, log); err != nil {
 			return "", false, err
-		} else if !ok {
+		} else if !ok || !isOwner(statefulSet, pod) {
+			log.Warnf("Pod %s not found for RaftCluster %s", podName, statefulSetName)
 			return "", true, nil
 		}
 
@@ -248,7 +283,7 @@ func (r *RaftPartitionReconciler) reconcileReplica(ctx context.Context, log logg
 		default:
 			partition.Status.State = raftv1beta3.RaftPartitionReconfiguring
 			partition.Status.Members++
-			log.Debugw("Allocating new member", logging.Int64("MemberID", int64(partition.Status.Members)))
+			log.Infow("Allocating new member", logging.Int64("MemberID", int64(partition.Status.Members)))
 			if err := updateStatus(r.client, ctx, partition, log); err != nil {
 				return "", false, err
 			}
@@ -262,10 +297,6 @@ func (r *RaftPartitionReconciler) reconcileReplica(ctx context.Context, log logg
 		log.Infow("Creating RaftReplica",
 			logging.Int64("MemberID", int64(replica.Spec.MemberID)))
 		if err := controllerutil.SetControllerReference(partition, replica, r.scheme); err != nil {
-			log.Error(err)
-			return "", false, err
-		}
-		if err := controllerutil.SetOwnerReference(pod, replica, r.scheme); err != nil {
 			log.Error(err)
 			return "", false, err
 		}

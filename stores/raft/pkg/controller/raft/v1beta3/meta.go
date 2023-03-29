@@ -196,3 +196,12 @@ func removeFinalizer(object client.Object, name string) {
 	}
 	object.SetFinalizers(finalizers)
 }
+
+func isOwner(owner client.Object, owned client.Object) bool {
+	for _, ownerRef := range owned.GetOwnerReferences() {
+		if ownerRef.UID == owner.GetUID() {
+			return true
+		}
+	}
+	return false
+}

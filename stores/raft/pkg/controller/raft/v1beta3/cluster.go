@@ -510,6 +510,9 @@ func (r *RaftClusterReconciler) reconcileStatus(ctx context.Context, log logging
 		}
 		log.Warn(err)
 		return nil
+	} else if !isOwner(cluster, statefulSet) {
+		log.Warnf("StatefulSet not found for RaftCluster %s", name)
+		return nil
 	}
 
 	switch cluster.Status.State {
