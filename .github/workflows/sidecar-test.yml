@@ -90,29 +90,6 @@ jobs:
           name: sidecar-controller
           path: /tmp/sidecar-controller.tar
 
-  build-sidecar-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build image
-        uses: docker/build-push-action@v3
-        with:
-          context: sidecar
-          file: sidecar/build/controller-test/Dockerfile
-          tags: atomix/sidecar-controller-test
-          outputs: type=docker,dest=/tmp/test.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: test
-          path: /tmp/test.tar
-
   run-tests:
     runs-on: ubuntu-latest
 
@@ -120,7 +97,6 @@ jobs:
       - build-controller
       - build-controller-init
       - build-sidecar-controller
-      - build-sidecar-tests
 
     steps:
       - name: Checkout
@@ -155,26 +131,40 @@ jobs:
           name: sidecar-controller
           path: /tmp
 
-      - name: Fetch atomix/sidecar-controller-test
-        uses: actions/download-artifact@v3
-        with:
-          name: test
-          path: /tmp
-
       - name: Load Docker images
         run: |
           kind load image-archive /tmp/controller.tar
           kind load image-archive /tmp/controller-init.tar
           kind load image-archive /tmp/sidecar-controller.tar
-          kind load image-archive /tmp/test.tar
 
       - name: Install core controller
-        run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
-
-      - name: Test pod memory controller
         run: |
-          kubectl create ns test
-          ct install --namespace kube-system --charts ./sidecar/chart --helm-extra-set-args '--set image.pullPolicy=Never --set init.image.pullPolicy=Never --set test.image.pullPolicy=Never --set test.enabled=true'
+          helm install \
+            atomix-controller \
+            ./controller/chart \
+            -n kube-system \
+            --set image.pullPolicy=Never \
+            --set init.image.pullPolicy=Never \
+            --wait
+
+      - name: Install sidecar controller
+        run: |
+          helm install \
+            atomix-sidecar-controller \
+            ./sidecar/chart \
+            -n kube-system \
+            --set image.pullPolicy=Never \
+            --set init.image.pullPolicy=Never \
+            --wait
+
+      - name: Test sidecar controller
+        working-directory: sidecar/tests
+        run: |
+          helmit test ./... \
+            --context ${{ github.workspace }} \
+            --namespace test \
+            --create-namespace \
+            --verbose
 
       - name: Record k8s status
         if: failure()

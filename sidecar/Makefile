@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .PHONY: build
-build: sidecar controller controller-test
+build: sidecar controller
 
 sidecar:
 	docker build . -f build/sidecar/Dockerfile -t atomix/sidecar
@@ -11,10 +11,7 @@ sidecar:
 controller:
 	docker build . -f build/controller/Dockerfile -t atomix/sidecar-controller
 
-controller-test:
-	docker build . -f build/controller-test/Dockerfile -t atomix/sidecar-controller-test
-
-kind: sidecar-kind controller-kind controller-test-kind
+kind: sidecar-kind controller-kind
 
 sidecar-kind: sidecar
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
@@ -23,10 +20,6 @@ sidecar-kind: sidecar
 controller-kind: controller
 	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
 	kind load docker-image atomix/sidecar-controller:latest
-
-controller-test-kind: controller-test
-	@if [ "`kind get clusters`" = '' ]; then echo "no kind cluster found" && exit 1; fi
-	kind load docker-image atomix/sidecar-controller-test:latest
 
 .PHONY: test
 test:
