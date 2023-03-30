@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - 'master'
+      - 'helmit'
     paths:
       - 'stores/shared-memory/**'
   pull_request:
@@ -27,22 +28,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: controller
           context: controller
           file: controller/build/controller/Dockerfile
           tags: atomix/controller
-          outputs: type=docker,dest=/tmp/controller.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: controller
-          path: /tmp/controller.tar
 
   build-controller-init:
     runs-on: ubuntu-latest
@@ -50,45 +42,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: controller-init
           context: controller
           file: controller/build/controller-init/Dockerfile
           tags: atomix/controller-init
-          outputs: type=docker,dest=/tmp/controller-init.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: controller-init
-          path: /tmp/controller-init.tar
-
-  build-shared-memory-node:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build image
-        uses: docker/build-push-action@v3
-        with:
-          context: stores/shared-memory
-          file: stores/shared-memory/build/node/Dockerfile
-          tags: atomix/shared-memory-node
-          outputs: type=docker,dest=/tmp/shared-memory-node.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: shared-memory-node
-          path: /tmp/shared-memory-node.tar
 
   build-shared-memory-controller:
     runs-on: ubuntu-latest
@@ -96,55 +56,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: shared-memory-controller
           context: stores/shared-memory
           file: stores/shared-memory/build/controller/Dockerfile
           tags: atomix/shared-memory-controller
-          outputs: type=docker,dest=/tmp/shared-memory-controller.tar
 
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: shared-memory-controller
-          path: /tmp/shared-memory-controller.tar
-
-  build-shared-memory-tests:
+  build-shared-memory-node:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: shared-memory-node
           context: stores/shared-memory
-          file: stores/shared-memory/build/controller-test/Dockerfile
-          tags: atomix/shared-memory-controller-test
-          outputs: type=docker,dest=/tmp/test.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: test
-          path: /tmp/test.tar
+          file: stores/shared-memory/build/node/Dockerfile
+          tags: atomix/shared-memory-node
 
   run-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     needs:
       - build-controller
       - build-controller-init
-      - build-shared-memory-node
       - build-shared-memory-controller
-      - build-shared-memory-tests
+      - build-shared-memory-node
 
     steps:
       - name: Checkout
@@ -155,6 +97,9 @@ jobs:
 
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
+
+      - name: Setup Helmit
+        uses: ./.github/actions/setup-helmit
 
       - name: Create kind cluster
         uses: helm/kind-action@v1.4.0
@@ -173,48 +118,62 @@ jobs:
           name: controller-init
           path: /tmp
 
-      - name: Fetch atomix/shared-memory-node
-        uses: actions/download-artifact@v3
-        with:
-          name: shared-memory-node
-          path: /tmp
-
       - name: Fetch atomix/shared-memory-controller
         uses: actions/download-artifact@v3
         with:
           name: shared-memory-controller
           path: /tmp
 
-      - name: Fetch atomix/shared-memory-controller-test
+      - name: Fetch atomix/shared-memory-node
         uses: actions/download-artifact@v3
         with:
-          name: test
+          name: shared-memory-node
           path: /tmp
 
       - name: Load Docker images
         run: |
           kind load image-archive /tmp/controller.tar
           kind load image-archive /tmp/controller-init.tar
-          kind load image-archive /tmp/shared-memory-node.tar
           kind load image-archive /tmp/shared-memory-controller.tar
-          kind load image-archive /tmp/test.tar
+          kind load image-archive /tmp/shared-memory-node.tar
 
       - name: Install core controller
-        run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
-
-      - name: Test shared memory controller
         run: |
-          kubectl create ns test
-          ct install --namespace kube-system --charts ./stores/shared-memory/chart --helm-extra-set-args '--set image.pullPolicy=Never --set init.image.pullPolicy=Never --set test.image.pullPolicy=Never --set test.enabled=true'
+          helm install \
+            atomix-controller \
+            ./controller/chart \
+            -n kube-system \
+            --set image.pullPolicy=Never \
+            --set init.image.pullPolicy=Never \
+            --wait
+
+      - name: Install Shared Memory controller
+        run: |
+          helm install \
+            atomix-shared-memory-controller \
+            ./stores/shared-memory/chart \
+            -n kube-system \
+            --set image.pullPolicy=Never \
+            --set init.image.pullPolicy=Never \
+            --wait
+
+      - name: Test Shared Memory controller
+        working-directory: stores/shared-memory/tests
+        run: |
+          helmit test ./... \
+            --context ${{ github.workspace }} \
+            --namespace test \
+            --create-namespace \
+            --verbose
 
       - name: Record k8s status
         if: failure()
         run: |
-          echo "kubectl get -n test pods --all-namespaces"
-          kubectl get -n test pods --all-namespaces
-          echo "kubectl get -n test storageprofiles --all-namespaces"
-          kubectl get -n test storageprofiles --all-namespaces
-          echo "kubectl get -n test datastores --all-namespaces"
-          kubectl get -n test datastores --all-namespaces
-          echo "kubectl get -n test sharedmemorystores --all-namespaces"
-          kubectl get -n test sharedmemorystores --all-namespaces
+          echo "kubectl get pods --all-namespaces"
+          kubectl get pods --all-namespaces
+          echo "kubectl get storageprofiles --all-namespaces"
+          kubectl get storageprofiles --all-namespaces
+          echo "kubectl get datastores --all-namespaces"
+          kubectl get datastores --all-namespaces
+          echo "kubectl get sharedmemorystores --all-namespaces"
+          kubectl get sharedmemorystores --all-namespaces

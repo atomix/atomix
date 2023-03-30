@@ -29,22 +29,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: controller
           context: controller
           file: controller/build/controller/Dockerfile
           tags: atomix/controller
-          outputs: type=docker,dest=/tmp/controller.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: controller
-          path: /tmp/controller.tar
 
   build-controller-init:
     runs-on: ubuntu-latest
@@ -52,22 +43,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: controller-init
           context: controller
           file: controller/build/controller-init/Dockerfile
           tags: atomix/controller-init
-          outputs: type=docker,dest=/tmp/controller-init.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: controller-init
-          path: /tmp/controller-init.tar
 
   build-pod-memory-controller:
     runs-on: ubuntu-latest
@@ -75,56 +57,51 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: pod-memory-controller
           context: stores/pod-memory
           file: stores/pod-memory/build/controller/Dockerfile
           tags: atomix/pod-memory-controller
-          outputs: type=docker,dest=/tmp/pod-memory-controller.tar
 
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: pod-memory-controller
-          path: /tmp/pod-memory-controller.tar
-
-  build-tests:
+  build-sidecar-controller:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      - name: Build image
+        uses: ./.github/actions/docker-build
+        with:
+          name: sidecar-controller
+          context: sidecar
+          file: sidecar/build/controller/Dockerfile
+          tags: atomix/sidecar-controller
+
+  build-sidecar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
-          file: drivers/test/build/Dockerfile
-          tags: atomix/driver-test:pod-memory
-          build-args: |
-            driver=pod-memory
-            version=v1
-          outputs: type=docker,dest=/tmp/test.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: test
-          path: /tmp/test.tar
+          name: sidecar
+          file: drivers/pod-memory/tests/Dockerfile
+          tags: atomix/sidecar:pod-memory
 
   run-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     needs:
       - build-controller
       - build-controller-init
       - build-pod-memory-controller
-      - build-tests
+      - build-sidecar-controller
+      - build-sidecar
 
     steps:
       - name: Checkout
@@ -135,6 +112,9 @@ jobs:
 
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
+
+      - name: Setup Helmit
+        uses: ./.github/actions/setup-helmit
 
       - name: Create kind cluster
         uses: helm/kind-action@v1.4.0
@@ -159,10 +139,16 @@ jobs:
           name: pod-memory-controller
           path: /tmp
 
-      - name: Fetch atomix/driver-test
+      - name: Fetch atomix/sidecar-controller
         uses: actions/download-artifact@v3
         with:
-          name: test
+          name: sidecar-controller
+          path: /tmp
+
+      - name: Fetch atomix/sidecar
+        uses: actions/download-artifact@v3
+        with:
+          name: sidecar
           path: /tmp
 
       - name: Load Docker images
@@ -170,16 +156,33 @@ jobs:
           kind load image-archive /tmp/controller.tar
           kind load image-archive /tmp/controller-init.tar
           kind load image-archive /tmp/pod-memory-controller.tar
-          kind load image-archive /tmp/test.tar
+          kind load image-archive /tmp/sidecar-controller.tar
+          kind load image-archive /tmp/sidecar.tar
 
       - name: Install core controller
-        run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
+        run: |
+          helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
+
+      - name: Install sidecar controller
+        run: |
+          helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Install store controller
-        run: helm install -n kube-system atomix-pod-memory-controller ./stores/pod-memory/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
+        run: |
+          helm install -n kube-system atomix-pod-memory-controller ./stores/pod-memory/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Run driver tests
-        run: ct install --charts ./drivers/pod-memory/test
+        working-directory: drivers/pod-memory/tests
+        run: |
+          helmit test ./... \
+            --context ${{ github.workspace }} \
+            --namespace test \
+            --create-namespace \
+            --label sidecar.atomix.io/inject=true \
+            --label runtime.atomix.io/profile=pod-memory \
+            --annotation sidecar.atomix.io/image=atomix/sidecar:pod-memory \
+            --annotation sidecar.atomix.io/imagePullPolicy=Never \
+            --verbose
 
       - name: Record k8s status
         if: failure()
