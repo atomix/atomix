@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package main
+package tests
 
 import (
 	"context"
 	"encoding/json"
 	"github.com/atomix/atomix/controller/pkg/apis/atomix/v3beta4"
 	atomixv3beta4 "github.com/atomix/atomix/controller/pkg/client/clientset/versioned/typed/atomix/v3beta4"
-	"github.com/atomix/atomix/test/pkg/tests"
+	"github.com/atomix/atomix/tests/pkg/tests"
 	"github.com/onosproject/helmit/pkg/helm"
 	"github.com/onosproject/helmit/pkg/test"
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -18,17 +18,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func main() {
-	test.Main(map[string]test.TestingSuite{
-		"counter": new(CounterTestSuite),
-		"map":     new(MapTestSuite),
-	})
-}
-
 type EtcdTestSuite struct {
 	test.Suite
 	*atomixv3beta4.AtomixV3beta4Client
 	release *helm.Release
+}
+
+func (s *EtcdTestSuite) TestMap() {
+	s.RunSuite(new(tests.MapTestSuite))
 }
 
 func (s *EtcdTestSuite) SetupSuite(ctx context.Context) {
@@ -94,34 +91,4 @@ func (s *EtcdTestSuite) TearDownSuite(ctx context.Context) {
 	s.NoError(s.StorageProfiles(s.Namespace()).Delete(ctx, "etcd", metav1.DeleteOptions{}))
 	s.NoError(s.DataStores(s.Namespace()).Delete(ctx, "etcd", metav1.DeleteOptions{}))
 	s.NoError(s.Helm().Uninstall(s.release.Name).Do(ctx))
-}
-
-type CounterTestSuite struct {
-	tests.CounterTestSuite
-	EtcdTestSuite
-}
-
-func (s *CounterTestSuite) SetupSuite(ctx context.Context) {
-	s.EtcdTestSuite.SetupSuite(ctx)
-	s.CounterTestSuite.SetupSuite(ctx)
-}
-
-func (s *CounterTestSuite) TearDownSuite(ctx context.Context) {
-	s.CounterTestSuite.TearDownSuite(ctx)
-	s.EtcdTestSuite.TearDownSuite(ctx)
-}
-
-type MapTestSuite struct {
-	tests.MapTestSuite
-	EtcdTestSuite
-}
-
-func (s *MapTestSuite) SetupSuite(ctx context.Context) {
-	s.EtcdTestSuite.SetupSuite(ctx)
-	s.MapTestSuite.SetupSuite(ctx)
-}
-
-func (s *MapTestSuite) TearDownSuite(ctx context.Context) {
-	s.MapTestSuite.TearDownSuite(ctx)
-	s.EtcdTestSuite.TearDownSuite(ctx)
 }

@@ -11,10 +11,10 @@ on:
   push:
     branches:
       - 'master'
-      - 'helmit'
     paths:
       - 'drivers/etcd/**'
-      - 'sidecar/**'
+      - 'drivers/test/**'
+      - 'stores/etcd/**'
   pull_request:
   workflow_dispatch:
 
@@ -29,22 +29,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: controller
           context: controller
           file: controller/build/controller/Dockerfile
           tags: atomix/controller
-          outputs: type=docker,dest=/tmp/controller.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: controller
-          path: /tmp/controller.tar
 
   build-controller-init:
     runs-on: ubuntu-latest
@@ -52,22 +43,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: controller-init
           context: controller
           file: controller/build/controller-init/Dockerfile
           tags: atomix/controller-init
-          outputs: type=docker,dest=/tmp/controller-init.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: controller-init
-          path: /tmp/controller-init.tar
 
   build-sidecar-controller:
     runs-on: ubuntu-latest
@@ -75,22 +57,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: sidecar-controller
           context: sidecar
           file: sidecar/build/controller/Dockerfile
           tags: atomix/sidecar-controller
-          outputs: type=docker,dest=/tmp/sidecar-controller.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: sidecar-controller
-          path: /tmp/sidecar-controller.tar
 
   build-sidecar:
     runs-on: ubuntu-latest
@@ -98,24 +71,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
-        with:
-          file: drivers/etcd/tests/Dockerfile
-          tags: atomix/sidecar:etcd
-          outputs: type=docker,dest=/tmp/sidecar.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
+        uses: ./.github/actions/docker-build
         with:
           name: sidecar
-          path: /tmp/sidecar.tar
+          file: drivers/etcd/tests/Dockerfile
+          tags: atomix/sidecar:etcd
 
   run-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     needs:
       - build-controller
@@ -173,10 +138,12 @@ jobs:
           kind load image-archive /tmp/sidecar.tar
 
       - name: Install core controller
-        run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
+        run: |
+          helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Install sidecar controller
-        run: helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
+        run: |
+          helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
       - name: Run driver tests
         working-directory: drivers/etcd/tests
