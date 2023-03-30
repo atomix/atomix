@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Build Docker image
+
+inputs:
+  context:
+    description: "The Docker context"
+    required: false
+
+  file:
+    description: "The Dockerfile"
+    required: false
+
+  tags:
+    description: "The image tags"
+    required: false
+
+  outputs:
+    description: "The build outputs"
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v2
+      with:
+        install: true
+
+    - name: Cache Docker layers
+      uses: actions/cache@v2
+      with:
+        path: /tmp/.buildx-cache
+        # Key is named differently to avoid collision
+        key: ${{ runner.os }}-multi-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-multi-buildx
+
+    - name: Build image
+      uses: docker/build-push-action@v2
+      with:
+        context: ${{ inputs.context }}
+        builder: ${{ steps.buildx.outputs.name }}
+        file: ${{ inputs.file }}
+        tags: ${{ inputs.tags }}
+        outputs: ${{ inputs.outputs }}
+        cache-from: type=local,src=/tmp/.buildx-cache
+        # Note the mode=max here
+        # More: https://github.com/moby/buildkit#--export-cache-options
+        # And: https://github.com/docker/buildx#--cache-tonametypetypekeyvalue
+        cache-to: type=local,mode=max,dest=/tmp/.buildx-cache-new
+
+    # Temp fix
+    # https://github.com/docker/build-push-action/issues/252
+    # https://github.com/moby/buildkit/issues/1896
+    - name: Move cache
+      shell: bash
+      run: |
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
