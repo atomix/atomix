@@ -1,4 +1,4 @@
-module github.com/atomix/atomix/tests
+module github.com/atomix/atomix/testing
 
 go 1.19
 
@@ -6,7 +6,7 @@ require (
 	github.com/atomix/atomix/api v1.0.0
 	github.com/atomix/atomix/runtime v1.0.0
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
-	github.com/onosproject/helmit v1.0.1-0.20230330105952-92c6645b0cbf
+	github.com/onosproject/helmit v1.1.0
 	google.golang.org/grpc v1.49.0
 )
 
@@ -58,7 +58,6 @@ require (
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
-	github.com/iancoleman/strcase v0.1.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
