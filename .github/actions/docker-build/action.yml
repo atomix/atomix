@@ -6,19 +6,20 @@ name: Build Docker image
 
 inputs:
   name:
-    description: "The name of the image to build"
+    description: 'The name of the image to build'
     required: true
 
   context:
-    description: "The Docker context"
-    required: true
+    description: 'The Docker context'
+    required: false
+    default: '.'
 
   file:
-    description: "The Dockerfile"
+    description: 'The Dockerfile'
     required: false
 
   tags:
-    description: "The image tags"
+    description: 'The image tags'
     required: false
 
 runs:
@@ -43,6 +44,8 @@ runs:
         file: ${{ inputs.file }}
         tags: ${{ inputs.tags }}
         outputs: type=docker,dest=/tmp/${{ inputs.name }}.tar
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
     - name: Share image
       uses: actions/upload-artifact@v3

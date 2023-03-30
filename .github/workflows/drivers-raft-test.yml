@@ -30,24 +30,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: controller
           context: controller
           file: controller/build/controller/Dockerfile
           tags: atomix/controller
-          outputs: type=docker,dest=/tmp/controller.tar
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: controller
-          path: /tmp/controller.tar
 
   build-controller-init:
     runs-on: ubuntu-latest
@@ -55,24 +44,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: controller-init
           context: controller
           file: controller/build/controller-init/Dockerfile
           tags: atomix/controller-init
-          outputs: type=docker,dest=/tmp/controller-init.tar
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: controller-init
-          path: /tmp/controller-init.tar
 
   build-raft-node:
     runs-on: ubuntu-latest
@@ -80,24 +58,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: raft-node
           context: stores/raft
           file: stores/raft/build/node/Dockerfile
           tags: atomix/raft-node
-          outputs: type=docker,dest=/tmp/raft-node.tar
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: raft-node
-          path: /tmp/raft-node.tar
 
   build-raft-controller:
     runs-on: ubuntu-latest
@@ -105,24 +72,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: raft-controller
           context: stores/raft
           file: stores/raft/build/controller/Dockerfile
           tags: atomix/raft-controller
-          outputs: type=docker,dest=/tmp/raft-controller.tar
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: raft-controller
-          path: /tmp/raft-controller.tar
 
   build-sidecar-controller:
     runs-on: ubuntu-latest
@@ -130,24 +86,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
+        uses: ./.github/actions/docker-build
         with:
+          name: sidecar-controller
           context: sidecar
           file: sidecar/build/controller/Dockerfile
           tags: atomix/sidecar-controller
-          outputs: type=docker,dest=/tmp/sidecar-controller.tar
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: sidecar-controller
-          path: /tmp/sidecar-controller.tar
 
   build-sidecar:
     runs-on: ubuntu-latest
@@ -155,23 +100,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build image
-        uses: docker/build-push-action@v3
-        with:
-          file: drivers/raft/tests/Dockerfile
-          tags: atomix/sidecar:raft
-          outputs: type=docker,dest=/tmp/sidecar.tar
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
+        uses: ./.github/actions/docker-build
         with:
           name: sidecar
-          path: /tmp/sidecar.tar
+          file: drivers/raft/tests/Dockerfile
+          tags: atomix/sidecar:raft
 
   run-tests:
     runs-on: ubuntu-latest
