@@ -5,7 +5,6 @@
 .PHONY: build
 build:
 	$(MAKE) -C api build
-	$(MAKE) -C bench build
 	$(MAKE) -C charts build
 	$(MAKE) -C controller build
 	$(MAKE) -C drivers build
@@ -13,6 +12,7 @@ build:
 	$(MAKE) -C runtime build
 	$(MAKE) -C sidecar build
 	$(MAKE) -C stores build
+	$(MAKE) -C testing build
 
 .PHONY: test
 test:
@@ -25,10 +25,10 @@ test:
 	$(MAKE) -C runtime test
 	$(MAKE) -C sidecar test
 	$(MAKE) -C stores test
+	$(MAKE) -C testing test
 
 .PHONY: kind
 kind:
-	$(MAKE) -C bench kind
 	$(MAKE) -C controller kind
 	$(MAKE) -C sidecar kind
 	$(MAKE) -C stores kind
