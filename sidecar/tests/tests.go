@@ -22,7 +22,7 @@ type SidecarTestSuite struct {
 	*atomixv3beta4.AtomixV3beta4Client
 }
 
-func (s *SidecarTestSuite) SetupSuite(ctx context.Context) {
+func (s *SidecarTestSuite) SetupSuite() {
 	atomixV3beta3Client, err := atomixv3beta3.NewForConfig(s.Config())
 	s.NoError(err)
 	s.AtomixV3beta3Client = atomixV3beta3Client
@@ -32,9 +32,9 @@ func (s *SidecarTestSuite) SetupSuite(ctx context.Context) {
 	s.AtomixV3beta4Client = atomixV3beta4Client
 }
 
-func (s *SidecarTestSuite) TestSidecarInjection(ctx context.Context) {
+func (s *SidecarTestSuite) TestSidecarInjection() {
 	s.T().Log("Create StorageProfile")
-	_, err := s.AtomixV3beta4Client.StorageProfiles(s.Namespace()).Create(ctx, &v3beta4.StorageProfile{
+	_, err := s.AtomixV3beta4Client.StorageProfiles(s.Namespace()).Create(s.Context(), &v3beta4.StorageProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sidecar",
 		},
@@ -51,7 +51,7 @@ func (s *SidecarTestSuite) TestSidecarInjection(ctx context.Context) {
 	s.NoError(err)
 
 	s.T().Log("Create Pod with sidecar")
-	_, err = s.CoreV1().Pods(s.Namespace()).Create(ctx, &corev1.Pod{
+	_, err = s.CoreV1().Pods(s.Namespace()).Create(s.Context(), &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sidecar",
 			Labels: map[string]string{
@@ -74,7 +74,7 @@ func (s *SidecarTestSuite) TestSidecarInjection(ctx context.Context) {
 
 	s.T().Log("Await Pod sidecar ready")
 	s.Await(func() bool {
-		pod, err := s.CoreV1().Pods(s.Namespace()).Get(ctx, "sidecar", metav1.GetOptions{})
+		pod, err := s.CoreV1().Pods(s.Namespace()).Get(s.Context(), "sidecar", metav1.GetOptions{})
 		s.NoError(err)
 		if len(pod.Status.ContainerStatuses) < 2 {
 			return false
