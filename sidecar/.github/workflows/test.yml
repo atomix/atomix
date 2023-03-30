@@ -56,7 +56,7 @@ jobs:
       - name: Build image
         uses: ./.github/actions/docker-build
         with:
-          name: sidecar
+          name: sidecar-controller
           context: sidecar
           file: sidecar/build/controller/Dockerfile
           tags: atomix/sidecar-controller
