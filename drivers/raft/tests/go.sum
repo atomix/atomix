@@ -83,8 +83,8 @@ github.com/atomix/atomix/runtime v1.1.0 h1:K1fUQqfngOqkXTk+1CwbPLO9STQ6gUVe6qXLl
 github.com/atomix/atomix/runtime v1.1.0/go.mod h1:7PtAhumBMs3TE3L/qXUSr4cNqqOWKGBFTvcHw+ZIQZ8=
 github.com/atomix/atomix/stores/raft v0.7.1-0.20230314010507-dd4da27ce84f h1:Q+q5WWCDGyrI4PomNIK+a5H0ah/GwqEOfGRRQxuYGdA=
 github.com/atomix/atomix/stores/raft v0.7.1-0.20230314010507-dd4da27ce84f/go.mod h1:sl6t0CCQ9sA1PnJzV//EApFMPPoFXwwZlrmfL8gLGhs=
-github.com/atomix/atomix/tests v0.0.0-20230328165957-402bf3f3669f h1:H5HP+O5KTJl5aJnJ+9byAH+M5NkanMA19N9ETJX7m2Q=
-github.com/atomix/atomix/tests v0.0.0-20230328165957-402bf3f3669f/go.mod h1:tg2AHOFVkMRV5dgGHH/4iNq4rkFgMIVGlRMB/4J/llM=
+github.com/atomix/atomix/testing v0.0.0-20230330161022-3567801cb34a h1:DGXf29sdVsPROPLY2FWEZkv/krRzpwEYQDhe3DqPnSE=
+github.com/atomix/atomix/testing v0.0.0-20230330161022-3567801cb34a/go.mod h1:aOejmqLLeJxSQPyOem3kASTTmqvfjznJ+YsMNCfpUAg=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
@@ -353,8 +353,6 @@ github.com/huandu/xstrings v1.3.2/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq
 github.com/huandu/xstrings v1.3.3/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/huandu/xstrings v1.4.0 h1:D17IlohoQq4UcpqD7fDk80P7l+lwAmlFaBHgOipl2FU=
 github.com/huandu/xstrings v1.4.0/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
-github.com/iancoleman/strcase v0.1.2 h1:gnomlvw9tnV3ITTAxzKSgTF+8kFWcU/f+TgttpXGz1U=
-github.com/iancoleman/strcase v0.1.2/go.mod h1:SK73tn/9oHe+/Y0h39VT4UCxmurVJkR5NA7kMEAOgSE=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/imdario/mergo v0.3.11/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH0dnCYA=
@@ -492,8 +490,8 @@ github.com/nelsam/hel/v2 v2.3.3/go.mod h1:1ZTGfU2PFTOd5mx22i5O0Lc2GY933lQ2wb/ggy
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
 github.com/olekukonko/tablewriter v0.0.5/go.mod h1:hPp6KlRPjbx+hW8ykQs1w3UBbZlj6HuIJcUGPhkA7kY=
-github.com/onosproject/helmit v0.6.21-0.20230327175649-41e4726658d1 h1:DQbJvqOYYtQgGdozx6Xc34cfg/Q4fQ2ivwbBJI/wLCk=
-github.com/onosproject/helmit v0.6.21-0.20230327175649-41e4726658d1/go.mod h1:SO9XK1T3gskgf3aVwg2ys/v6DFkamAF/QzSX995bzPU=
+github.com/onosproject/helmit v1.1.0 h1:3GnfTCWiwXT/BsGNeKw+Rg/+4A3eFDomZHj+8prEK+4=
+github.com/onosproject/helmit v1.1.0/go.mod h1:SO9XK1T3gskgf3aVwg2ys/v6DFkamAF/QzSX995bzPU=
 github.com/onsi/ginkgo/v2 v2.4.0 h1:+Ig9nvqgS5OBSACXNk15PLdp0U9XPYROt9CFzVdFGIs=
 github.com/onsi/gomega v1.23.0 h1:/oxKu9c2HVap+F3PfKort2Hw5DEU+HGlW8n+tguWsys=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
