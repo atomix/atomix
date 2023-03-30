@@ -5,7 +5,6 @@
 package tests
 
 import (
-	"context"
 	"github.com/atomix/atomix/api/errors"
 	runtimev1 "github.com/atomix/atomix/api/runtime/v1"
 	"github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors"
@@ -22,8 +21,8 @@ type PrimitiveTestSuite struct {
 	ID   runtimev1.PrimitiveID
 }
 
-func (s *PrimitiveTestSuite) SetupSuite(ctx context.Context) {
-	conn, err := grpc.DialContext(ctx, "127.0.0.1:5678",
+func (s *PrimitiveTestSuite) SetupSuite() {
+	conn, err := grpc.DialContext(s.Context(), "127.0.0.1:5678",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainUnaryInterceptor(
 			interceptors.ErrorHandlingUnaryClientInterceptor(),
@@ -35,11 +34,11 @@ func (s *PrimitiveTestSuite) SetupSuite(ctx context.Context) {
 	s.conn = conn
 }
 
-func (s *PrimitiveTestSuite) TearDownSuite(ctx context.Context) {
+func (s *PrimitiveTestSuite) TearDownSuite() {
 	s.NoError(s.conn.Close())
 }
 
-func (s *PrimitiveTestSuite) SetupTest(ctx context.Context) {
+func (s *PrimitiveTestSuite) SetupTest() {
 	s.ID = runtimev1.PrimitiveID{
 		Name: petname.Generate(2, "-"),
 	}
