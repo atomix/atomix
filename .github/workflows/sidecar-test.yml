@@ -14,6 +14,7 @@ on:
       - 'helmit'
     paths:
       - 'sidecar/**'
+      - 'testing/**'
   pull_request:
   workflow_dispatch:
 

@@ -11,6 +11,7 @@ on:
       - 'helmit'
     paths:
       - 'stores/pod-memory/**'
+      - 'testing/**'
   pull_request:
   workflow_dispatch:
 

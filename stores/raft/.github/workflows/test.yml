@@ -11,6 +11,7 @@ on:
       - 'helmit'
     paths:
       - 'stores/raft/**'
+      - 'testing/**'
   pull_request:
   workflow_dispatch:
 

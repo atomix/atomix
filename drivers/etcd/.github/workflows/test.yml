@@ -8,10 +8,11 @@ on:
   push:
     branches:
       - 'master'
+      - 'helmit'
     paths:
       - 'drivers/etcd/**'
-      - 'drivers/test/**'
       - 'stores/etcd/**'
+      - 'testing/**'
   pull_request:
   workflow_dispatch:
 

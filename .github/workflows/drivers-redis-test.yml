@@ -11,10 +11,11 @@ on:
   push:
     branches:
       - 'master'
+      - 'helmit'
     paths:
       - 'drivers/redis/**'
-      - 'drivers/test/**'
-      - 'stores/redis/**'
+      - 'sidecar/**'
+      - 'testing/**'
   pull_request:
   workflow_dispatch:
 

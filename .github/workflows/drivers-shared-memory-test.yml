@@ -16,6 +16,7 @@ on:
       - 'drivers/shared-memory/**'
       - 'stores/shared-memory/**'
       - 'sidecar/**'
+      - 'testing/**'
   pull_request:
   workflow_dispatch:
 

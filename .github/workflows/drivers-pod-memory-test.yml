@@ -11,10 +11,12 @@ on:
   push:
     branches:
       - 'master'
+      - 'helmit'
     paths:
       - 'drivers/pod-memory/**'
-      - 'drivers/test/**'
       - 'stores/pod-memory/**'
+      - 'sidecar/**'
+      - 'testing/**'
   pull_request:
   workflow_dispatch:
 

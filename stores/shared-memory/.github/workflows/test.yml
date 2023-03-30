@@ -11,6 +11,7 @@ on:
       - 'helmit'
     paths:
       - 'stores/shared-memory/**'
+      - 'testing/**'
   pull_request:
   workflow_dispatch:
 
