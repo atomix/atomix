@@ -106,6 +106,9 @@ jobs:
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
 
+      - name: Setup Helmit
+        uses: ./.github/actions/setup-helmit
+
       - name: Create kind cluster
         uses: helm/kind-action@v1.4.0
         with:
@@ -173,5 +176,3 @@ jobs:
           kubectl get storageprofiles --all-namespaces
           echo "kubectl get datastores --all-namespaces"
           kubectl get datastores --all-namespaces
-          echo "kubectl get podmemorystores --all-namespaces"
-          kubectl get podmemorystores --all-namespaces
