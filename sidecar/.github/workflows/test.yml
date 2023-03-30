@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build image
-        uses: ./.github/actions/setup-helm
+        uses: ./.github/actions/docker-build
         with:
           context: controller
           file: controller/build/controller/Dockerfile
@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build image
-        uses: ./.github/actions/setup-helm
+        uses: ./.github/actions/docker-build
         with:
           context: controller
           file: controller/build/controller-init/Dockerfile
@@ -66,7 +66,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build image
-        uses: ./.github/actions/setup-helm
+        uses: ./.github/actions/docker-build
         with:
           context: sidecar
           file: sidecar/build/controller/Dockerfile
