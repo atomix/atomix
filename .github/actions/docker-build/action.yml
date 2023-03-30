@@ -28,7 +28,7 @@ runs:
       id: cache-image
       uses: actions/cache@v3
       with:
-        path: /tmp/images
+        path: /tmp/*.tar
         key: ${{ runner.os }}-images-${{ hashFiles(format('{0}/**', inputs.context)) }}
 
     - name: Set up Docker Buildx
@@ -42,10 +42,10 @@ runs:
         context: ${{ inputs.context }}
         file: ${{ inputs.file }}
         tags: ${{ inputs.tags }}
-        outputs: type=docker,dest=/tmp/images/${{ inputs.name }}.tar
+        outputs: type=docker,dest=/tmp/${{ inputs.name }}.tar
 
     - name: Share image
       uses: actions/upload-artifact@v3
       with:
         name: ${{ inputs.name }}
-        path: /tmp/images/${{ inputs.name }}.tar
+        path: /tmp/${{ inputs.name }}.tar
