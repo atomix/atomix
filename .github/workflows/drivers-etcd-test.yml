@@ -11,9 +11,10 @@ on:
   push:
     branches:
       - 'master'
+      - 'helmit'
     paths:
       - 'drivers/etcd/**'
-      - 'drivers/test/**'
+      - 'sidecar/**'
   pull_request:
   workflow_dispatch:
 
@@ -68,7 +69,7 @@ jobs:
           name: controller-init
           path: /tmp/controller-init.tar
 
-  build-tests:
+  build-sidecar-controller:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -80,18 +81,38 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v3
         with:
-          file: drivers/test/build/Dockerfile
-          tags: atomix/driver-test:etcd
-          build-args: |
-            driver=etcd
-            version=v3
-          outputs: type=docker,dest=/tmp/test.tar
+          context: sidecar
+          file: sidecar/build/controller/Dockerfile
+          tags: atomix/sidecar-controller
+          outputs: type=docker,dest=/tmp/sidecar-controller.tar
 
       - name: Share image
         uses: actions/upload-artifact@v3
         with:
-          name: test
-          path: /tmp/test.tar
+          name: sidecar-controller
+          path: /tmp/sidecar-controller.tar
+
+  build-sidecar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build image
+        uses: docker/build-push-action@v3
+        with:
+          file: drivers/etcd/tests/Dockerfile
+          tags: atomix/sidecar:etcd
+          outputs: type=docker,dest=/tmp/sidecar.tar
+
+      - name: Share image
+        uses: actions/upload-artifact@v3
+        with:
+          name: sidecar
+          path: /tmp/sidecar.tar
 
   run-tests:
     runs-on: ubuntu-latest
@@ -99,7 +120,8 @@ jobs:
     needs:
       - build-controller
       - build-controller-init
-      - build-tests
+      - build-sidecar-controller
+      - build-sidecar
 
     steps:
       - name: Checkout
@@ -110,6 +132,9 @@ jobs:
 
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
+
+      - name: Setup Helmit
+        uses: ./.github/actions/setup-helmit
 
       - name: Create kind cluster
         uses: helm/kind-action@v1.4.0
@@ -128,23 +153,43 @@ jobs:
           name: controller-init
           path: /tmp
 
-      - name: Fetch atomix/driver-test
+      - name: Fetch atomix/sidecar-controller
         uses: actions/download-artifact@v3
         with:
-          name: test
+          name: sidecar-controller
+          path: /tmp
+
+      - name: Fetch atomix/sidecar
+        uses: actions/download-artifact@v3
+        with:
+          name: sidecar
           path: /tmp
 
       - name: Load Docker images
         run: |
           kind load image-archive /tmp/controller.tar
           kind load image-archive /tmp/controller-init.tar
-          kind load image-archive /tmp/test.tar
+          kind load image-archive /tmp/sidecar-controller.tar
+          kind load image-archive /tmp/sidecar.tar
 
       - name: Install core controller
         run: helm install -n kube-system atomix-controller ./controller/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
 
+      - name: Install sidecar controller
+        run: helm install -n kube-system atomix-sidecar-controller ./sidecar/chart --set image.pullPolicy=Never --set init.image.pullPolicy=Never --wait
+
       - name: Run driver tests
-        run: ct install --charts ./drivers/etcd/test
+        working-directory: drivers/etcd/tests
+        run: |
+          helmit test ./... \
+            --context ${{ github.workspace }} \
+            --namespace test \
+            --create-namespace \
+            --label sidecar.atomix.io/inject=true \
+            --label runtime.atomix.io/profile=etcd \
+            --annotation sidecar.atomix.io/image=atomix/sidecar:etcd \
+            --annotation sidecar.atomix.io/imagePullPolicy=Never \
+            --verbose
 
       - name: Record k8s status
         if: failure()

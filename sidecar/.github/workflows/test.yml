@@ -28,16 +28,10 @@ jobs:
       - name: Build image
         uses: ./.github/actions/docker-build
         with:
+          name: controller
           context: controller
           file: controller/build/controller/Dockerfile
           tags: atomix/controller
-          outputs: type=docker,dest=/tmp/controller.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: controller
-          path: /tmp/controller.tar
 
   build-controller-init:
     runs-on: ubuntu-latest
@@ -48,36 +42,23 @@ jobs:
       - name: Build image
         uses: ./.github/actions/docker-build
         with:
+          name: controller-init
           context: controller
           file: controller/build/controller-init/Dockerfile
           tags: atomix/controller-init
-          outputs: type=docker,dest=/tmp/controller-init.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: controller-init
-          path: /tmp/controller-init.tar
 
   build-sidecar-controller:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
       - name: Build image
         uses: ./.github/actions/docker-build
         with:
+          name: sidecar
           context: sidecar
           file: sidecar/build/controller/Dockerfile
           tags: atomix/sidecar-controller
-          outputs: type=docker,dest=/tmp/sidecar-controller.tar
-
-      - name: Share image
-        uses: actions/upload-artifact@v3
-        with:
-          name: sidecar-controller
-          path: /tmp/sidecar-controller.tar
 
   run-tests:
     runs-on: ubuntu-latest
