@@ -58,6 +58,8 @@ jobs:
           file: stores/raft/build/node/Dockerfile
           tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/raft-node:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/raft-node:latest,atomix/raft-node:v{0},atomix/raft-node:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   package-and-release:
     runs-on: ubuntu-latest

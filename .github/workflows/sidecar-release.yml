@@ -56,6 +56,8 @@ jobs:
           file: sidecar/build/controller/Dockerfile
           tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/sidecar-controller:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/sidecar-controller:latest,atomix/sidecar-controller:v{0},atomix/sidecar-controller:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build and push atomix/sidecar
         uses: docker/build-push-action@v3
