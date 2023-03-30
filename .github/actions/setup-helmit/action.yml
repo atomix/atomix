@@ -21,5 +21,5 @@ runs:
           ${{ runner.os }}-go-
 
     - name: Install Helmit
-      run: go install github.com/onosproject/helmit@v1.1.0
+      run: go install github.com/onosproject/helmit@2ddc026
       shell: bash
