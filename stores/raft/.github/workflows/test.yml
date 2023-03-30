@@ -35,6 +35,8 @@ jobs:
           file: controller/build/controller/Dockerfile
           tags: atomix/controller
           outputs: type=docker,dest=/tmp/controller.tar
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Share image
         uses: actions/upload-artifact@v3
@@ -58,6 +60,8 @@ jobs:
           file: controller/build/controller-init/Dockerfile
           tags: atomix/controller-init
           outputs: type=docker,dest=/tmp/controller-init.tar
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Share image
         uses: actions/upload-artifact@v3
@@ -81,6 +85,8 @@ jobs:
           file: stores/raft/build/node/Dockerfile
           tags: atomix/raft-node
           outputs: type=docker,dest=/tmp/raft-node.tar
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Share image
         uses: actions/upload-artifact@v3
@@ -104,6 +110,8 @@ jobs:
           file: stores/raft/build/controller/Dockerfile
           tags: atomix/raft-controller
           outputs: type=docker,dest=/tmp/raft-controller.tar
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Share image
         uses: actions/upload-artifact@v3
