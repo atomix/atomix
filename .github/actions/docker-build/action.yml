@@ -30,7 +30,7 @@ runs:
       uses: actions/cache@v3
       with:
         path: /tmp/*.tar
-        key: ${{ runner.os }}-images-${{ hashFiles(format('{0}/**', inputs.context)) }}
+        key: ${{ runner.os }}-images-${{ inputs.name }}-${{ hashFiles(format('{0}/**', inputs.context)) }}
 
     - name: Set up Docker Buildx
       if: steps.cache-image.outputs.cache-hit != 'true'
