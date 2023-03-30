@@ -8,6 +8,7 @@ build:
 	$(MAKE) -C charts build
 	$(MAKE) -C controller build
 	$(MAKE) -C drivers build
+	$(MAKE) -C logging build
 	$(MAKE) -C protocols build
 	$(MAKE) -C runtime build
 	$(MAKE) -C sidecar build
@@ -21,6 +22,7 @@ test:
 	$(MAKE) -C charts test
 	$(MAKE) -C controller test
 	$(MAKE) -C drivers test
+	$(MAKE) -C logging test
 	$(MAKE) -C protocols test
 	$(MAKE) -C runtime test
 	$(MAKE) -C sidecar test
