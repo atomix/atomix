@@ -165,25 +165,13 @@ func (r *RaftReplicaReconciler) reconcileCreate(ctx context.Context, log logging
 		Namespace: replica.Namespace,
 		Name:      replica.Spec.Pod.Name,
 	}
-	pod := &corev1.Pod{}
-	if ok, err := get(r.client, ctx, podName, pod, log); err != nil {
-		return err
-	} else if !ok {
-		return nil
-	}
-
 	log = log.WithFields(
 		logging.Int64("PartitionID", int64(partition.Spec.PartitionID)),
 		logging.Int64("GroupID", int64(partition.Spec.GroupID)),
 		logging.Int64("ReplicaID", int64(replica.Spec.ReplicaID)),
 		logging.Int64("MemberID", int64(replica.Spec.MemberID)),
 		logging.Stringer("Pod", podName))
-	if ok, err := r.addReplica(ctx, log, store, cluster, partition, pod, replica); err != nil {
-		return err
-	} else if ok {
-		return nil
-	}
-	return nil
+	return r.addReplica(ctx, log, store, cluster, partition, replica)
 }
 
 func (r *RaftReplicaReconciler) reconcileDelete(ctx context.Context, log logging.Logger, replica *raftv1beta3.RaftReplica) error {
@@ -255,70 +243,73 @@ func (r *RaftReplicaReconciler) reconcileDelete(ctx context.Context, log logging
 		Namespace: replica.Namespace,
 		Name:      replica.Spec.Pod.Name,
 	}
-	pod := &corev1.Pod{}
-	if err := r.client.Get(ctx, podName, pod); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			log.Error(err)
-			return err
-		}
+	log = log.WithFields(
+		logging.Int64("PartitionID", int64(partition.Spec.PartitionID)),
+		logging.Int64("GroupID", int64(partition.Spec.GroupID)),
+		logging.Int64("ReplicaID", int64(replica.Spec.ReplicaID)),
+		logging.Int64("MemberID", int64(replica.Spec.MemberID)),
+		logging.Stringer("Pod", podName))
+
+	if err := r.removeReplica(ctx, log, store, cluster, partition, replica); err != nil {
 		log.Debug(err)
-		log.Debugf("Removing %s finalizer", raftReplicaIDKey)
-		removeFinalizer(replica, raftReplicaIDKey)
-		return update(r.client, ctx, replica, log)
+		return err
 	}
 
-	if ok, err := r.removeReplica(ctx, log, store, cluster, partition, pod, replica); err != nil {
-		return err
-	} else if ok {
-		log.Debugf("Removing %s finalizer", raftReplicaIDKey)
-		removeFinalizer(replica, raftReplicaIDKey)
-		return update(r.client, ctx, replica, log)
-	}
-	return nil
+	log.Debugf("Removing %s finalizer", raftReplicaIDKey)
+	removeFinalizer(replica, raftReplicaIDKey)
+	return update(r.client, ctx, replica, log)
 }
 
-func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, pod *corev1.Pod, replica *raftv1beta3.RaftReplica) (bool, error) {
-	if replica.Status.PodRef == nil {
-		replica.Status.PodRef = &corev1.ObjectReference{
-			APIVersion: pod.APIVersion,
-			Kind:       pod.Kind,
-			Namespace:  pod.Namespace,
-			Name:       pod.Name,
-			UID:        pod.UID,
-		}
-		replica.Status.Version = nil
-		return true, updateStatus(r.client, ctx, replica, log)
-	} else if replica.Status.PodRef.UID != pod.UID {
-		log.Info("Pod UID has changed; reverting replica status")
-		replica.Status.PodRef = &corev1.ObjectReference{
-			APIVersion: pod.APIVersion,
-			Kind:       pod.Kind,
-			Namespace:  pod.Namespace,
-			Name:       pod.Name,
-			UID:        pod.UID,
-		}
-		replica.Status.Version = nil
-		return true, updateStatus(r.client, ctx, replica, log)
+func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replica *raftv1beta3.RaftReplica) error {
+	podName := types.NamespacedName{
+		Namespace: replica.Namespace,
+		Name:      replica.Spec.Pod.Name,
 	}
-
-	var containerVersion int32
-	for _, containerStatus := range pod.Status.ContainerStatuses {
-		if containerStatus.Name == nodeContainerName {
-			containerVersion = containerStatus.RestartCount + 1
-			break
-		}
-	}
-
-	if replica.Status.Version == nil || containerVersion > *replica.Status.Version {
-		if replica.Status.State != raftv1beta3.RaftReplicaNotReady {
-			replica.Status.State = raftv1beta3.RaftReplicaNotReady
-			if err := updateStatus(r.client, ctx, replica, log); err != nil {
-				return false, err
-			}
+	pod := &corev1.Pod{}
+	if ok, err := get(r.client, ctx, podName, pod, log); err != nil {
+		return err
+	} else if !ok || pod.Status.PodIP == "" {
+		if replica.Status.State != raftv1beta3.RaftReplicaPending {
+			replica.Status.State = raftv1beta3.RaftReplicaPending
 			log.Infow("RaftReplica status changed", logging.String("Status", string(replica.Status.State)))
-			r.events.Eventf(replica, "Normal", "StateChanged", "State changed to %s", replica.Status.State)
-			return true, nil
+			return updateStatus(r.client, ctx, replica, log)
 		}
+		return nil
+	}
+
+	switch replica.Status.State {
+	case raftv1beta3.RaftReplicaPending:
+		if replica.Spec.Join && replica.Status.PodRef == nil {
+			replica.Status.State = raftv1beta3.RaftReplicaJoining
+		} else {
+			replica.Status.State = raftv1beta3.RaftReplicaBootstrapping
+		}
+		log.Infow("RaftReplica status changed", logging.String("Status", string(replica.Status.State)))
+		return updateStatus(r.client, ctx, replica, log)
+	case raftv1beta3.RaftReplicaBootstrapping:
+		members := make([]raftv1.MemberConfig, 0, int(replica.Spec.Peers))
+		for ordinal := 1; ordinal <= int(replica.Spec.Peers); ordinal++ {
+			peerID := raftv1beta3.ReplicaID(ordinal)
+			members = append(members, raftv1.MemberConfig{
+				MemberID: raftv1.MemberID(peerID),
+				Host:     getClusterPodDNSName(cluster, getReplicaPodName(cluster, partition, peerID)),
+				Port:     raftPort,
+				Role:     raftv1.MemberRole_MEMBER,
+			})
+		}
+
+		address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
+		conn, err := grpc.DialContext(ctx, address,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithUnaryInterceptor(interceptors.ErrorHandlingUnaryClientInterceptor()),
+			grpc.WithStreamInterceptor(interceptors.ErrorHandlingStreamClientInterceptor()))
+		if err != nil {
+			if !errors.IsUnavailable(err) {
+				log.Warn(err)
+			}
+			return err
+		}
+		defer conn.Close()
 
 		var config raftv1.RaftConfig
 		if store.Spec.ElectionRTT != nil {
@@ -339,138 +330,131 @@ func (r *RaftReplicaReconciler) addReplica(ctx context.Context, log logging.Logg
 			}
 		}
 
-		if !replica.Spec.Join {
-			if pod.Status.PodIP == "" {
-				return false, nil
-			}
-
-			members := make([]raftv1.MemberConfig, 0, int(replica.Spec.Peers))
-			for ordinal := 1; ordinal <= int(replica.Spec.Peers); ordinal++ {
-				peerID := raftv1beta3.ReplicaID(ordinal)
-				members = append(members, raftv1.MemberConfig{
-					MemberID: raftv1.MemberID(peerID),
-					Host:     getClusterPodDNSName(cluster, getReplicaPodName(cluster, partition, peerID)),
-					Port:     raftPort,
-					Role:     raftv1.MemberRole_MEMBER,
-				})
-			}
-
-			address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
-			conn, err := grpc.DialContext(ctx, address,
-				grpc.WithTransportCredentials(insecure.NewCredentials()),
-				grpc.WithUnaryInterceptor(interceptors.ErrorHandlingUnaryClientInterceptor()),
-				grpc.WithStreamInterceptor(interceptors.ErrorHandlingStreamClientInterceptor()))
-			if err != nil {
-				if !errors.IsUnavailable(err) {
-					log.Warn(err)
-				}
-				return false, err
-			}
-			defer conn.Close()
-
-			// Bootstrap the replica with the initial configuration
-			log.Infof("Bootstrapping replica")
-			node := raftv1.NewNodeClient(conn)
-			request := &raftv1.BootstrapGroupRequest{
-				GroupID:  raftv1.GroupID(replica.Spec.GroupID),
-				MemberID: raftv1.MemberID(replica.Spec.MemberID),
-				Members:  members,
-				Config:   config,
-			}
-			if _, err := node.BootstrapGroup(ctx, request); err != nil {
-				if !errors.IsUnavailable(err) && !errors.IsAlreadyExists(err) {
-					log.Warn(err)
-					r.events.Eventf(store, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.ReplicaID, err.Error())
-					r.events.Eventf(cluster, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.ReplicaID, err.Error())
-					r.events.Eventf(partition, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.ReplicaID, err.Error())
-					r.events.Eventf(pod, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.ReplicaID, err.Error())
-					r.events.Eventf(replica, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d: %s", partition.Spec.PartitionID, err.Error())
-				}
-				return false, err
-			} else {
-				r.events.Eventf(store, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.ReplicaID)
-				r.events.Eventf(cluster, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.ReplicaID)
-				r.events.Eventf(partition, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.ReplicaID)
-				r.events.Eventf(pod, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.ReplicaID)
-				r.events.Eventf(replica, "Normal", "Bootstrapped", "Bootstrapped partition %d", partition.Spec.PartitionID)
-			}
-
-			replica.Status.Version = &containerVersion
-			if err := updateStatus(r.client, ctx, replica, log); err != nil {
-				return false, err
-			}
-			return true, nil
-		} else {
-			// Loop through the replicas in the partition and attempt to add the replica to the Raft group until successful
-			options := &client.ListOptions{
-				Namespace:     replica.Namespace,
-				LabelSelector: labels.SelectorFromSet(newPartitionSelector(partition)),
-			}
-			peers := &raftv1beta3.RaftReplicaList{}
-			if err := r.client.List(ctx, peers, options); err != nil {
-				return false, err
-			}
-
-			var returnErr error
-			for _, peer := range peers.Items {
-				if ok, err := r.tryAddReplica(ctx, log, store, cluster, partition, replica, &peer); err != nil {
-					returnErr = err
-				} else if ok {
-					if pod.Status.PodIP == "" {
-						continue
-					}
-
-					address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
-					conn, err := grpc.DialContext(ctx, address,
-						grpc.WithTransportCredentials(insecure.NewCredentials()),
-						grpc.WithUnaryInterceptor(interceptors.ErrorHandlingUnaryClientInterceptor()),
-						grpc.WithStreamInterceptor(interceptors.ErrorHandlingStreamClientInterceptor()))
-					if err != nil {
-						if !errors.IsUnavailable(err) {
-							log.Warn(err)
-						}
-						return false, err
-					}
-
-					// Bootstrap the replica by joining it to the cluster
-					log.Infof("Joining existing group")
-					client := raftv1.NewNodeClient(conn)
-					request := &raftv1.JoinGroupRequest{
-						GroupID:  raftv1.GroupID(replica.Spec.GroupID),
-						MemberID: raftv1.MemberID(replica.Spec.MemberID),
-						Config:   config,
-					}
-					_, err = client.JoinGroup(ctx, request)
-					_ = conn.Close()
-					if err != nil {
-						if !errors.IsUnavailable(err) && !errors.IsAlreadyExists(err) {
-							log.Warn(err)
-							r.events.Eventf(store, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
-							r.events.Eventf(cluster, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
-							r.events.Eventf(partition, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
-							r.events.Eventf(pod, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
-							r.events.Eventf(replica, "Warning", "JoinFailed", "Failed to join partition %d: %s", partition.Spec.PartitionID, err.Error())
-						}
-						return false, err
-					} else {
-						r.events.Eventf(store, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.ReplicaID, partition.Spec.PartitionID)
-						r.events.Eventf(cluster, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.ReplicaID, partition.Spec.PartitionID)
-						r.events.Eventf(partition, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.ReplicaID, partition.Spec.PartitionID)
-						r.events.Eventf(pod, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.ReplicaID, partition.Spec.PartitionID)
-						r.events.Eventf(replica, "Normal", "Joined", "Joined partition %d", partition.Spec.PartitionID)
-					}
-
-					replica.Status.Version = &containerVersion
-					if err := updateStatus(r.client, ctx, replica, log); err != nil {
-						return false, err
-					}
-					return true, nil
-				}
-			}
-			return false, returnErr
+		// Bootstrap the replica with the initial configuration
+		log.Infof("Bootstrapping replica")
+		node := raftv1.NewNodeClient(conn)
+		request := &raftv1.BootstrapGroupRequest{
+			GroupID:  raftv1.GroupID(replica.Spec.GroupID),
+			MemberID: raftv1.MemberID(replica.Spec.MemberID),
+			Members:  members,
+			Config:   config,
 		}
+		if _, err := node.BootstrapGroup(ctx, request); err != nil {
+			if !errors.IsUnavailable(err) && !errors.IsAlreadyExists(err) {
+				log.Warn(err)
+				r.events.Eventf(store, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.ReplicaID, err.Error())
+				r.events.Eventf(cluster, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.ReplicaID, err.Error())
+				r.events.Eventf(partition, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.ReplicaID, err.Error())
+				r.events.Eventf(pod, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d replica %d: %s", partition.Spec.PartitionID, replica.Spec.ReplicaID, err.Error())
+				r.events.Eventf(replica, "Warning", "BootstrapFailed", "Failed to bootstrap partition %d: %s", partition.Spec.PartitionID, err.Error())
+			}
+			return err
+		} else {
+			r.events.Eventf(store, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.ReplicaID)
+			r.events.Eventf(cluster, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.ReplicaID)
+			r.events.Eventf(partition, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.ReplicaID)
+			r.events.Eventf(pod, "Normal", "Bootstrapped", "Bootstrapped partition %d replica %d", partition.Spec.PartitionID, replica.Spec.ReplicaID)
+			r.events.Eventf(replica, "Normal", "Bootstrapped", "Bootstrapped partition %d", partition.Spec.PartitionID)
+		}
+
+		replica.Status.State = raftv1beta3.RaftReplicaRunning
+		replica.Status.PodRef = &corev1.ObjectReference{
+			Namespace:       pod.Namespace,
+			Name:            pod.Name,
+			UID:             pod.UID,
+			ResourceVersion: pod.ResourceVersion,
+		}
+		log.Infow("RaftReplica status changed", logging.String("Status", string(replica.Status.State)))
+		return updateStatus(r.client, ctx, replica, log)
+	case raftv1beta3.RaftReplicaJoining:
+		// Loop through the replicas in the partition and attempt to add the replica to the Raft group until successful
+		options := &client.ListOptions{
+			Namespace:     replica.Namespace,
+			LabelSelector: labels.SelectorFromSet(newPartitionSelector(partition)),
+		}
+		peers := &raftv1beta3.RaftReplicaList{}
+		if err := r.client.List(ctx, peers, options); err != nil {
+			return err
+		}
+
+		var returnErr error
+		for _, peer := range peers.Items {
+			if ok, err := r.tryAddReplica(ctx, log, store, cluster, partition, replica, &peer); err != nil {
+				returnErr = err
+			} else if ok {
+				address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
+				conn, err := grpc.DialContext(ctx, address,
+					grpc.WithTransportCredentials(insecure.NewCredentials()),
+					grpc.WithUnaryInterceptor(interceptors.ErrorHandlingUnaryClientInterceptor()),
+					grpc.WithStreamInterceptor(interceptors.ErrorHandlingStreamClientInterceptor()))
+				if err != nil {
+					if !errors.IsUnavailable(err) {
+						log.Warn(err)
+					}
+					return err
+				}
+
+				var config raftv1.RaftConfig
+				if store.Spec.ElectionRTT != nil {
+					config.ElectionRTT = uint64(*store.Spec.ElectionRTT)
+				}
+				if store.Spec.HeartbeatRTT != nil {
+					config.ElectionRTT = uint64(*store.Spec.HeartbeatRTT)
+				}
+				if store.Spec.SnapshotEntries != nil {
+					config.SnapshotEntries = uint64(*store.Spec.SnapshotEntries)
+				}
+				if store.Spec.CompactionOverhead != nil {
+					config.CompactionOverhead = uint64(*store.Spec.CompactionOverhead)
+				}
+				if store.Spec.MaxInMemLogSize != nil {
+					if maxInMemLogSize, ok := store.Spec.MaxInMemLogSize.AsInt64(); ok {
+						config.MaxInMemLogSize = uint64(maxInMemLogSize)
+					}
+				}
+
+				// Bootstrap the replica by joining it to the cluster
+				log.Infof("Joining existing group")
+				client := raftv1.NewNodeClient(conn)
+				request := &raftv1.JoinGroupRequest{
+					GroupID:  raftv1.GroupID(replica.Spec.GroupID),
+					MemberID: raftv1.MemberID(replica.Spec.MemberID),
+					Config:   config,
+				}
+				_, err = client.JoinGroup(ctx, request)
+				_ = conn.Close()
+				if err != nil {
+					if !errors.IsUnavailable(err) && !errors.IsAlreadyExists(err) {
+						log.Warn(err)
+						r.events.Eventf(store, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
+						r.events.Eventf(cluster, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
+						r.events.Eventf(partition, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
+						r.events.Eventf(pod, "Warning", "JoinFailed", "Failed to join replica %d to partition %d: %s", replica.Spec.ReplicaID, partition.Spec.PartitionID, err.Error())
+						r.events.Eventf(replica, "Warning", "JoinFailed", "Failed to join partition %d: %s", partition.Spec.PartitionID, err.Error())
+					}
+					return err
+				} else {
+					r.events.Eventf(store, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.ReplicaID, partition.Spec.PartitionID)
+					r.events.Eventf(cluster, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.ReplicaID, partition.Spec.PartitionID)
+					r.events.Eventf(partition, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.ReplicaID, partition.Spec.PartitionID)
+					r.events.Eventf(pod, "Normal", "Joined", "Joined replica %d to partition %d", replica.Spec.ReplicaID, partition.Spec.PartitionID)
+					r.events.Eventf(replica, "Normal", "Joined", "Joined partition %d", partition.Spec.PartitionID)
+				}
+
+				replica.Status.State = raftv1beta3.RaftReplicaRunning
+				replica.Status.PodRef = &corev1.ObjectReference{
+					Namespace:       pod.Namespace,
+					Name:            pod.Name,
+					UID:             pod.UID,
+					ResourceVersion: pod.ResourceVersion,
+				}
+				log.Infow("RaftReplica status changed", logging.String("Status", string(replica.Status.State)))
+				return updateStatus(r.client, ctx, replica, log)
+			}
+		}
+		return returnErr
 	}
-	return false, nil
+	return nil
 }
 
 func (r *RaftReplicaReconciler) tryAddReplica(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replica *raftv1beta3.RaftReplica, peer *raftv1beta3.RaftReplica) (bool, error) {
@@ -545,24 +529,27 @@ func (r *RaftReplicaReconciler) tryAddReplica(ctx context.Context, log logging.L
 	return true, nil
 }
 
-func (r *RaftReplicaReconciler) removeReplica(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, pod *corev1.Pod, replica *raftv1beta3.RaftReplica) (bool, error) {
-	if replica.Status.State != raftv1beta3.RaftReplicaNotReady {
-		replica.Status.State = raftv1beta3.RaftReplicaNotReady
-		if err := updateStatus(r.client, ctx, replica, log); err != nil {
-			return false, err
-		}
+func (r *RaftReplicaReconciler) removeReplica(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replica *raftv1beta3.RaftReplica) error {
+	if replica.Status.State != raftv1beta3.RaftReplicaLeaving {
+		replica.Status.State = raftv1beta3.RaftReplicaLeaving
 		log.Infow("RaftReplica status changed", logging.String("Status", string(replica.Status.State)))
-		r.events.Eventf(replica, "Normal", "StateChanged", "State changed to %s", replica.Status.State)
-		return true, nil
+		return updateStatus(r.client, ctx, replica, log)
+	}
+
+	podName := types.NamespacedName{
+		Namespace: replica.Namespace,
+		Name:      replica.Spec.Pod.Name,
+	}
+	pod := &corev1.Pod{}
+	if ok, err := get(r.client, ctx, podName, pod, log); err != nil {
+		return err
+	} else if !ok || pod.Status.PodIP == "" {
+		return nil
 	}
 
 	if replica.Status.PodRef == nil || replica.Status.PodRef.UID != pod.UID {
 		log.Info("Pod UID does not match; skipping RaftReplica removal")
-		return true, nil
-	}
-
-	if pod.Status.PodIP == "" {
-		return false, nil
+		return nil
 	}
 
 	address := fmt.Sprintf("%s:%d", pod.Status.PodIP, apiPort)
@@ -574,7 +561,7 @@ func (r *RaftReplicaReconciler) removeReplica(ctx context.Context, log logging.L
 		if !errors.IsUnavailable(err) {
 			log.Warn(err)
 		}
-		return false, err
+		return err
 	}
 	defer conn.Close()
 
@@ -597,7 +584,7 @@ func (r *RaftReplicaReconciler) removeReplica(ctx context.Context, log logging.L
 	}
 	peers := &raftv1beta3.RaftReplicaList{}
 	if err := r.client.List(ctx, peers, options); err != nil {
-		return false, err
+		return err
 	}
 
 	var returnErr error
@@ -605,10 +592,10 @@ func (r *RaftReplicaReconciler) removeReplica(ctx context.Context, log logging.L
 		if ok, err := r.tryRemoveReplica(ctx, log, store, cluster, partition, replica, &peer); err != nil {
 			returnErr = err
 		} else if ok {
-			return true, nil
+			return nil
 		}
 	}
-	return false, returnErr
+	return returnErr
 }
 
 func (r *RaftReplicaReconciler) tryRemoveReplica(ctx context.Context, log logging.Logger, store *raftv1beta3.RaftStore, cluster *raftv1beta3.RaftCluster, partition *raftv1beta3.RaftPartition, replica *raftv1beta3.RaftReplica, peer *raftv1beta3.RaftReplica) (bool, error) {

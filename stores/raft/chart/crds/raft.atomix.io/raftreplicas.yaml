@@ -205,6 +205,7 @@ spec:
                   type: integer
             status:
               type: object
+              default: {}
               properties:
                 podRef:
                   type: object
@@ -227,9 +228,13 @@ spec:
                   nullable: true
                 state:
                   type: string
-                  default: NotReady
+                  default: Pending
                   enum:
-                    - NotReady
+                    - Pending
+                    - Bootstrapping
+                    - Joining
+                    - Leaving
+                    - Running
                     - Ready
                 role:
                   type: string

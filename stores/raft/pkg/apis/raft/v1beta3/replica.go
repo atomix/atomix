@@ -13,8 +13,16 @@ import (
 type RaftReplicaState string
 
 const (
-	// RaftReplicaNotReady indicates a RaftReplica is not ready
-	RaftReplicaNotReady RaftReplicaState = "NotReady"
+	// RaftReplicaPending indicates a RaftReplica is waiting to join the cluster
+	RaftReplicaPending RaftReplicaState = "Pending"
+	// RaftReplicaBootstrapping indicates a RaftReplica is bootstrapping the cluster
+	RaftReplicaBootstrapping RaftReplicaState = "Bootstrapping"
+	// RaftReplicaJoining indicates a RaftReplica is joining the cluster
+	RaftReplicaJoining RaftReplicaState = "Joining"
+	// RaftReplicaLeaving indicates a RaftReplica is leaving the cluster
+	RaftReplicaLeaving RaftReplicaState = "Leaving"
+	// RaftReplicaRunning indicates a RaftReplica is running
+	RaftReplicaRunning RaftReplicaState = "Running"
 	// RaftReplicaReady indicates a RaftReplica is ready
 	RaftReplicaReady RaftReplicaState = "Ready"
 )
