@@ -22,7 +22,7 @@ func ErrorHandlingStreamClientInterceptor() grpc.StreamClientInterceptor {
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		stream, err := streamer(ctx, desc, cc, method, opts...)
 		if err != nil {
-			return nil, err
+			return nil, getAtomixError(err)
 		}
 		return &errorHandlingClientStream{
 			ClientStream: stream,
