@@ -108,7 +108,6 @@ type Output interface {
 	Error(msg string, fields ...Field)
 	Fatal(msg string, fields ...Field)
 	Panic(msg string, fields ...Field)
-	DPanic(msg string, fields ...Field)
 	Warn(msg string, fields ...Field)
 	Sync() error
 }
@@ -162,10 +161,6 @@ func (o *zapOutput) Fatal(msg string, fields ...Field) {
 
 func (o *zapOutput) Panic(msg string, fields ...Field) {
 	o.logger.Panic(msg, o.getZapFields(fields...)...)
-}
-
-func (o *zapOutput) DPanic(msg string, fields ...Field) {
-	o.logger.DPanic(msg, o.getZapFields(fields...)...)
 }
 
 func (o *zapOutput) Warn(msg string, fields ...Field) {
