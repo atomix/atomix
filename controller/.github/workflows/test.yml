@@ -1,0 +1,130 @@
+# SPDX-FileCopyrightText: 2023-present Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Test Controller
+
+on:
+  push:
+    branches:
+      - 'master'
+    paths:
+      - 'controller/**'
+      - 'testing/**'
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-controller:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build image
+        uses: ./.github/actions/docker-build
+        with:
+          name: controller
+          context: controller
+          file: controller/build/controller/Dockerfile
+          tags: atomix/controller
+
+  build-controller-init:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build image
+        uses: ./.github/actions/docker-build
+        with:
+          name: controller-init
+          context: controller
+          file: controller/build/controller-init/Dockerfile
+          tags: atomix/controller-init
+
+  run-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    needs:
+      - build-controller
+      - build-controller-init
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Setup Helm
+        uses: ./.github/actions/setup-helm
+
+      - name: Setup Helmit
+        uses: ./.github/actions/setup-helmit
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.4.0
+        with:
+          cluster_name: kind
+
+      - name: Fetch atomix/controller
+        uses: actions/download-artifact@v3
+        with:
+          name: controller
+          path: /tmp
+
+      - name: Fetch atomix/controller-init
+        uses: actions/download-artifact@v3
+        with:
+          name: controller-init
+          path: /tmp
+
+      - name: Load Docker images
+        run: |
+          kind load image-archive /tmp/controller.tar
+          kind load image-archive /tmp/controller-init.tar
+
+      - name: Install core controller
+        run: |
+          helm install \
+            atomix-controller \
+            ./controller/chart \
+            -n kube-system \
+            --set image.pullPolicy=Never \
+            --set init.image.pullPolicy=Never \
+            --wait
+
+      - name: Install controller
+        run: |
+          helm install \
+            atomix-controller \
+            ./controller/chart \
+            -n kube-system \
+            --set image.pullPolicy=Never \
+            --set init.image.pullPolicy=Never \
+            --wait
+
+      - name: Test controller
+        working-directory: controller/tests
+        run: |
+          helmit test ./... \
+            --context ${{ github.workspace }} \
+            --namespace test \
+            --create-namespace \
+            --verbose
+
+      - name: Record k8s status
+        if: failure()
+        run: |
+          echo "kubectl get pods --all-namespaces"
+          kubectl get pods --all-namespaces
+          echo "kubectl get storageprofiles --all-namespaces"
+          kubectl get storageprofiles --all-namespaces
+          echo "kubectl get datastores --all-namespaces"
+          kubectl get datastores --all-namespaces
