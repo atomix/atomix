@@ -7,7 +7,9 @@ name: atomix-shared-memory-controller
 description: The shared memory controller extends the Kubernetes API with custom resources for memory stores.
 kubeVersion: ">=1.17.0"
 type: application
-version: 2.0.0
+# The 0.0.0 version is a placeholder. The 'version' and 'appVersion' keys are
+# set to the version specified by the tag when the chart is packaged for release.
+version: 0.0.0
 appVersion: latest
 keywords:
 - atomix

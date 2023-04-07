@@ -7,7 +7,9 @@ name: atomix
 description: Atomix core controllers and data stores
 kubeVersion: ">=1.17.0"
 type: application
-version: 2.0.0
+# The 0.0.0 version is a placeholder. The 'version' and 'appVersion' keys are
+# set to the version specified by the tag when the chart is packaged for release.
+version: 0.0.0
 keywords:
   - atomix
 home: https://atomix.io
