@@ -14,14 +14,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ControllerTestSuie is the onos-config HA test suite
-type ControllerTestSuie struct {
+// ControllerTestSuite is the onos-config HA test suite
+type ControllerTestSuite struct {
 	test.Suite
 	*atomixv3beta3.AtomixV3beta3Client
 	*atomixv3beta4.AtomixV3beta4Client
 }
 
-func (s *ControllerTestSuie) SetupSuite() {
+func (s *ControllerTestSuite) SetupSuite() {
 	atomixV3beta3Client, err := atomixv3beta3.NewForConfig(s.Config())
 	s.NoError(err)
 	s.AtomixV3beta3Client = atomixV3beta3Client
@@ -31,7 +31,7 @@ func (s *ControllerTestSuie) SetupSuite() {
 	s.AtomixV3beta4Client = atomixV3beta4Client
 }
 
-func (s *ControllerTestSuie) TestAPIV3beta3() {
+func (s *ControllerTestSuite) TestAPIV3beta3() {
 	s.T().Log("Create DataStore")
 	_, err := s.AtomixV3beta3Client.DataStores(s.Namespace()).Create(s.Context(), &v3beta3.DataStore{
 		ObjectMeta: metav1.ObjectMeta{
@@ -64,7 +64,7 @@ func (s *ControllerTestSuie) TestAPIV3beta3() {
 	s.NoError(err)
 }
 
-func (s *ControllerTestSuie) TestAPIV3beta4() {
+func (s *ControllerTestSuite) TestAPIV3beta4() {
 	s.T().Log("Create DataStore")
 	_, err := s.AtomixV3beta4Client.DataStores(s.Namespace()).Create(s.Context(), &v3beta4.DataStore{
 		ObjectMeta: metav1.ObjectMeta{
