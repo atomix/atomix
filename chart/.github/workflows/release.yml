@@ -31,6 +31,9 @@ jobs:
     needs:
       - parse-and-validate-version
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
 

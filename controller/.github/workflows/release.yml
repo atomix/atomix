@@ -43,13 +43,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go
-
-      - name: Make
-        run: make
-        working-directory: controller
-
       - name: Build and push atomix/controller
         uses: docker/build-push-action@v3
         with:
@@ -70,6 +63,9 @@ jobs:
       - parse-and-validate-version
       - build-and-push
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
 

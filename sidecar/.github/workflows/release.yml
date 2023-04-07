@@ -43,9 +43,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go
-
       - name: Build and push atomix/sidecar-controller
         uses: docker/build-push-action@v3
         with:
@@ -53,8 +50,6 @@ jobs:
           file: sidecar/build/controller/Dockerfile
           tags: ${{ needs.parse-and-validate-version.outputs.prerelease-version != '' && format('atomix/sidecar-controller:v{0}', needs.parse-and-validate-version.outputs.prerelease-version) || format('atomix/sidecar-controller:latest,atomix/sidecar-controller:v{0},atomix/sidecar-controller:v{1}', needs.parse-and-validate-version.outputs.minor-version, needs.parse-and-validate-version.outputs.patch-version) }}
           push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build and push atomix/sidecar
         uses: docker/build-push-action@v3
@@ -70,6 +65,9 @@ jobs:
       - parse-and-validate-version
       - build-and-push
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Setup Helm
         uses: ./.github/actions/setup-helm
 
