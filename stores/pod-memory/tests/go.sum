@@ -79,8 +79,6 @@ github.com/atomix/atomix/controller v1.0.1-0.20230301233247-275080a3c6af h1:bjpn
 github.com/atomix/atomix/controller v1.0.1-0.20230301233247-275080a3c6af/go.mod h1:y2eGC8VoqCZw7wB8MgSO4LZxrK9rWLvBLH2S9uuX8/I=
 github.com/atomix/atomix/stores/pod-memory v0.4.3-0.20230314010507-dd4da27ce84f h1:Qlppw8Svo9B8LVJYthANwN3pNmoLqOgRPQtuIU7+tC4=
 github.com/atomix/atomix/stores/pod-memory v0.4.3-0.20230314010507-dd4da27ce84f/go.mod h1:uARiGBlAePd/L4s/17oB8FCaR1v2j+eQhypCG4ZD/CM=
-github.com/atomix/atomix/stores/raft v0.7.1-0.20230314010507-dd4da27ce84f h1:Q+q5WWCDGyrI4PomNIK+a5H0ah/GwqEOfGRRQxuYGdA=
-github.com/atomix/atomix/stores/raft v0.7.1-0.20230314010507-dd4da27ce84f/go.mod h1:sl6t0CCQ9sA1PnJzV//EApFMPPoFXwwZlrmfL8gLGhs=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
@@ -480,8 +478,8 @@ github.com/nelsam/hel/v2 v2.3.3/go.mod h1:1ZTGfU2PFTOd5mx22i5O0Lc2GY933lQ2wb/ggy
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
 github.com/olekukonko/tablewriter v0.0.5/go.mod h1:hPp6KlRPjbx+hW8ykQs1w3UBbZlj6HuIJcUGPhkA7kY=
-github.com/onosproject/helmit v1.1.1-0.20230330165504-2ddc0262fe48 h1:GfAq8rOUWLMvUMw8U2v944Lfjhyx9ItJE/yLlU9K+t8=
-github.com/onosproject/helmit v1.1.1-0.20230330165504-2ddc0262fe48/go.mod h1:SO9XK1T3gskgf3aVwg2ys/v6DFkamAF/QzSX995bzPU=
+github.com/onosproject/helmit v1.1.3 h1:Qsb8tL2gHvxwZJG36cDU66u7xokQVmXhD073/yGgDZ4=
+github.com/onosproject/helmit v1.1.3/go.mod h1:SO9XK1T3gskgf3aVwg2ys/v6DFkamAF/QzSX995bzPU=
 github.com/onsi/ginkgo/v2 v2.4.0 h1:+Ig9nvqgS5OBSACXNk15PLdp0U9XPYROt9CFzVdFGIs=
 github.com/onsi/gomega v1.23.0 h1:/oxKu9c2HVap+F3PfKort2Hw5DEU+HGlW8n+tguWsys=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
