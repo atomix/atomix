@@ -8,15 +8,16 @@ import (
 	zp "go.uber.org/zap"
 	zc "go.uber.org/zap/zapcore"
 	"strings"
-	"sync/atomic"
 )
 
 // Level :
 type Level int32
 
 const (
+	// EmptyLevel :
+	EmptyLevel Level = iota
 	// DebugLevel logs a message at debug level
-	DebugLevel Level = iota
+	DebugLevel
 	// InfoLevel logs a message at info level
 	InfoLevel
 	// WarnLevel logs a message at warning level
@@ -27,16 +28,11 @@ const (
 	FatalLevel
 	// PanicLevel logs a message, then panics.
 	PanicLevel
-	// DPanicLevel logs at PanicLevel; otherwise, it logs at ErrorLevel
-	DPanicLevel
-
-	// EmptyLevel :
-	EmptyLevel
 )
 
 // String :
 func (l Level) String() string {
-	return [...]string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL", "PANIC", "DPANIC", ""}[l]
+	return [...]string{"", "debug", "info", "warn", "error", "fatal", "panic"}[l]
 }
 
 func levelToAtomicLevel(l Level) zp.AtomicLevel {
@@ -53,14 +49,13 @@ func levelToAtomicLevel(l Level) zp.AtomicLevel {
 		return zp.NewAtomicLevelAt(zc.FatalLevel)
 	case PanicLevel:
 		return zp.NewAtomicLevelAt(zc.PanicLevel)
-	case DPanicLevel:
-		return zp.NewAtomicLevelAt(zc.DPanicLevel)
+	default:
+		return zp.NewAtomicLevelAt(zc.FatalLevel)
 	}
-	return zp.NewAtomicLevelAt(zc.ErrorLevel)
 }
 
 func levelStringToLevel(l string) Level {
-	switch strings.ToUpper(l) {
+	switch strings.ToLower(l) {
 	case DebugLevel.String():
 		return DebugLevel
 	case InfoLevel.String():
@@ -73,27 +68,7 @@ func levelStringToLevel(l string) Level {
 		return FatalLevel
 	case PanicLevel.String():
 		return PanicLevel
-	case DPanicLevel.String():
-		return DPanicLevel
+	default:
+		return EmptyLevel
 	}
-	return ErrorLevel
-}
-
-func newAtomicLevel(level Level) *atomicLevel {
-	return &atomicLevel{
-		level: int32(level),
-	}
-}
-
-type atomicLevel struct {
-	level int32
-}
-
-func (l *atomicLevel) Store(level Level) {
-	atomic.StoreInt32(&l.level, int32(level))
-}
-
-func (l *atomicLevel) Load() Level {
-	atomic.LoadInt32(&l.level)
-	return Level(l.level)
 }

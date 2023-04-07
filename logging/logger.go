@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 var root *zapLogger
@@ -103,6 +104,10 @@ type Logger interface {
 	Infof(template string, args ...interface{})
 	Infow(msg string, fields ...Field)
 
+	Warn(...interface{})
+	Warnf(template string, args ...interface{})
+	Warnw(msg string, fields ...Field)
+
 	Error(...interface{})
 	Errorf(template string, args ...interface{})
 	Errorw(msg string, fields ...Field)
@@ -114,14 +119,6 @@ type Logger interface {
 	Panic(...interface{})
 	Panicf(template string, args ...interface{})
 	Panicw(msg string, fields ...Field)
-
-	DPanic(...interface{})
-	DPanicf(template string, args ...interface{})
-	DPanicw(msg string, fields ...Field)
-
-	Warn(...interface{})
-	Warnf(template string, args ...interface{})
-	Warnw(msg string, fields ...Field)
 }
 
 func newZapLogger(config Config, loggerConfig LoggerConfig, defaultLevel Level) (*zapLogger, error) {
@@ -146,29 +143,31 @@ func newZapLogger(config Config, loggerConfig LoggerConfig, defaultLevel Level) 
 	}
 
 	logger := &zapLogger{
+		zapContext:   &zapContext{},
 		config:       config,
 		loggerConfig: loggerConfig,
-		children:     make(map[string]*zapLogger),
 		outputs:      outputs,
-		mu:           &sync.RWMutex{},
-		level:        newAtomicLevel(EmptyLevel),
-		defaultLevel: newAtomicLevel(defaultLevel),
 	}
+	logger.defaultLevel.Store(int32(defaultLevel))
 	if loggerConfig.Level != nil {
 		logger.SetLevel(loggerConfig.GetLevel())
 	}
 	return logger, nil
 }
 
+type zapContext struct {
+	children     sync.Map
+	mu           sync.Mutex
+	level        atomic.Int32
+	defaultLevel atomic.Int32
+}
+
 // zapLogger is the default Logger implementation
 type zapLogger struct {
+	*zapContext
 	config       Config
 	loggerConfig LoggerConfig
-	children     map[string]*zapLogger
 	outputs      []*zapOutput
-	mu           *sync.RWMutex
-	level        *atomicLevel
-	defaultLevel *atomicLevel
 }
 
 func (l *zapLogger) Name() string {
@@ -192,19 +191,17 @@ func (l *zapLogger) GetLogger(names ...string) Logger {
 }
 
 func (l *zapLogger) getChild(name string) (*zapLogger, error) {
-	l.mu.RLock()
-	child, ok := l.children[name]
-	l.mu.RUnlock()
+	child, ok := l.children.Load(name)
 	if ok {
-		return child, nil
+		return child.(*zapLogger), nil
 	}
 
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	child, ok = l.children[name]
+	child, ok = l.children.Load(name)
 	if ok {
-		return child, nil
+		return child.(*zapLogger), nil
 	}
 
 	// Compute the name of the child logger
@@ -235,8 +232,8 @@ func (l *zapLogger) getChild(name string) (*zapLogger, error) {
 	}
 
 	// Create the child logger.
-	defaultLevel := l.defaultLevel.Load()
-	level := l.level.Load()
+	defaultLevel := Level(l.defaultLevel.Load())
+	level := Level(l.level.Load())
 	if level != EmptyLevel {
 		defaultLevel = level
 	}
@@ -246,31 +243,33 @@ func (l *zapLogger) getChild(name string) (*zapLogger, error) {
 	}
 
 	// Set the default log level on the child.
-	l.children[name] = logger
+	l.children.Store(name, logger)
 	return logger, nil
 }
 
 func (l *zapLogger) Level() Level {
-	level := l.level.Load()
+	level := Level(l.level.Load())
 	if level != EmptyLevel {
 		return level
 	}
-	return l.defaultLevel.Load()
+	return Level(l.defaultLevel.Load())
 }
 
 func (l *zapLogger) SetLevel(level Level) {
-	l.level.Store(level)
-	for _, child := range l.children {
-		child.setDefaultLevel(level)
-	}
+	l.level.Store(int32(level))
+	l.children.Range(func(key, value any) bool {
+		value.(*zapLogger).setDefaultLevel(level)
+		return true
+	})
 }
 
 func (l *zapLogger) setDefaultLevel(level Level) {
-	l.defaultLevel.Store(level)
-	if l.level.Load() == EmptyLevel {
-		for _, child := range l.children {
-			child.setDefaultLevel(level)
-		}
+	l.defaultLevel.Store(int32(level))
+	if Level(l.level.Load()) == EmptyLevel {
+		l.children.Range(func(key, value any) bool {
+			value.(*zapLogger).setDefaultLevel(level)
+			return true
+		})
 	}
 }
 
@@ -280,13 +279,10 @@ func (l *zapLogger) WithFields(fields ...Field) Logger {
 		outputs[i] = output.WithFields(fields...).(*zapOutput)
 	}
 	return &zapLogger{
+		zapContext:   l.zapContext,
 		config:       l.config,
 		loggerConfig: l.loggerConfig,
-		children:     l.children,
 		outputs:      outputs,
-		mu:           l.mu,
-		level:        l.level,
-		defaultLevel: l.defaultLevel,
 	}
 }
 
@@ -296,13 +292,10 @@ func (l *zapLogger) WithSkipCalls(calls int) Logger {
 		outputs[i] = output.WithSkipCalls(calls).(*zapOutput)
 	}
 	return &zapLogger{
+		zapContext:   l.zapContext,
 		config:       l.config,
 		loggerConfig: l.loggerConfig,
-		children:     l.children,
 		outputs:      outputs,
-		mu:           l.mu,
-		level:        l.level,
-		defaultLevel: l.defaultLevel,
 	}
 }
 
@@ -436,24 +429,6 @@ func (l *zapLogger) Panicf(template string, args ...interface{}) {
 func (l *zapLogger) Panicw(msg string, fields ...Field) {
 	l.log(PanicLevel, "", nil, fields, func(output Output, _ string, fields []Field) {
 		output.Panic(msg, fields...)
-	})
-}
-
-func (l *zapLogger) DPanic(args ...interface{}) {
-	l.log(DPanicLevel, "", args, nil, func(output Output, msg string, fields []Field) {
-		output.DPanic(msg, fields...)
-	})
-}
-
-func (l *zapLogger) DPanicf(template string, args ...interface{}) {
-	l.log(DPanicLevel, template, args, nil, func(output Output, msg string, fields []Field) {
-		output.DPanic(msg, fields...)
-	})
-}
-
-func (l *zapLogger) DPanicw(msg string, fields ...Field) {
-	l.log(DPanicLevel, "", nil, fields, func(output Output, _ string, fields []Field) {
-		output.DPanic(msg, fields...)
 	})
 }
 
