@@ -13,9 +13,9 @@ import (
 	"sync/atomic"
 )
 
-var root *zapLogger
+var root Logger
 
-const nameSep = "/"
+const pathSep = "/"
 
 const atomixDebugEnv = "ATOMIX_DEBUG"
 
@@ -32,24 +32,51 @@ func init() {
 }
 
 func configure(config Config) error {
-	rootLogger, err := newZapLogger(config, config.GetRootLogger(), EmptyLevel)
+	logger, err := newLogger(config)
 	if err != nil {
 		return err
 	}
-	root = rootLogger
+	root = logger
 	return nil
 }
 
+func newLogger(config Config) (Logger, error) {
+	context := newZapContext(config)
+	var outputs []Output
+	for name, outputConfig := range config.RootLogger.GetOutputs() {
+		sink, err := context.getSink(outputConfig.GetSink())
+		if err != nil {
+			return nil, err
+		}
+		outputs = append(outputs, newOutput(name, sink, outputConfig))
+	}
+
+	logger := &zapLogger{
+		flogrLogger: &flogrLogger{
+			zapContext: context,
+			config:     config.RootLogger,
+		},
+		outputs: outputs,
+	}
+	if config.RootLogger.Level != nil {
+		logger.level.Store(int32(levelStringToLevel(*config.RootLogger.Level)))
+	}
+	return logger, nil
+}
+
 // GetLogger gets a logger by name
-func GetLogger(names ...string) Logger {
-	if len(names) == 0 {
+func GetLogger(path ...string) Logger {
+	if len(path) > 1 {
+		panic("number of paths must be 0 or 1")
+	}
+	if len(path) == 0 {
 		pkg, ok := getCallerPackage()
 		if !ok {
 			panic("could not retrieve logger package")
 		}
-		names = []string{pkg}
+		path = []string{pkg}
 	}
-	return root.GetLogger(names...)
+	return root.GetLogger(path[0])
 }
 
 // getCallerPackage gets the package name of the calling function'ss caller
@@ -79,7 +106,7 @@ type Logger interface {
 	Name() string
 
 	// GetLogger gets a descendant of this Logger
-	GetLogger(names ...string) Logger
+	GetLogger(path string) Logger
 
 	// Level returns the logger's level
 	Level() Level
@@ -89,6 +116,9 @@ type Logger interface {
 
 	// WithFields adds fields to the logger
 	WithFields(fields ...Field) Logger
+
+	// WithOutputs adds outputs to the logger
+	WithOutputs(outputs ...Output) Logger
 
 	// WithSkipCalls skipsthe given number of calls to the logger methods
 	WithSkipCalls(calls int) Logger
@@ -121,65 +151,94 @@ type Logger interface {
 	Panicw(msg string, fields ...Field)
 }
 
-func newZapLogger(config Config, loggerConfig LoggerConfig, defaultLevel Level) (*zapLogger, error) {
-	var outputs []*zapOutput
-	outputConfigs := loggerConfig.GetOutputs()
-	outputs = make([]*zapOutput, len(outputConfigs))
-	for i, outputConfig := range outputConfigs {
-		var sinkConfig SinkConfig
-		if outputConfig.Sink == nil {
-			return nil, fmt.Errorf("output sink not configured for output %s", outputConfig.Name)
-		}
-		sink, ok := config.GetSink(*outputConfig.Sink)
-		if !ok {
-			panic(fmt.Sprintf("unknown sink %s", *outputConfig.Sink))
-		}
-		sinkConfig = sink
-		output, err := newZapOutput(loggerConfig, outputConfig, sinkConfig)
-		if err != nil {
-			return nil, err
-		}
-		outputs[i] = output
+func newZapContext(config Config) *zapContext {
+	return &zapContext{
+		config: config,
 	}
-
-	logger := &zapLogger{
-		zapContext:   &zapContext{},
-		config:       config,
-		loggerConfig: loggerConfig,
-		outputs:      outputs,
-	}
-	logger.defaultLevel.Store(int32(defaultLevel))
-	if loggerConfig.Level != nil {
-		logger.SetLevel(loggerConfig.GetLevel())
-	}
-	return logger, nil
 }
 
 type zapContext struct {
+	config Config
+	sinks  sync.Map
+	mu     sync.Mutex
+}
+
+func (c *zapContext) getSink(name string) (Sink, error) {
+	sink, ok := c.sinks.Load(name)
+	if ok {
+		return sink.(Sink), nil
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	sink, ok = c.sinks.Load(name)
+	if ok {
+		return sink.(Sink), nil
+	}
+
+	config, ok := c.config.GetSink(name)
+	if !ok {
+		return nil, fmt.Errorf("sink %s not found", name)
+	}
+
+	sink, err := newSink(config)
+	if err != nil {
+		return nil, err
+	}
+	c.sinks.Store(name, sink)
+	return sink.(Sink), nil
+}
+
+type flogrLogger struct {
+	*zapContext
+	config       LoggerConfig
+	path         string
 	children     sync.Map
 	mu           sync.Mutex
 	level        atomic.Int32
 	defaultLevel atomic.Int32
 }
 
+func (l *flogrLogger) Level() Level {
+	level := Level(l.level.Load())
+	if level != EmptyLevel {
+		return level
+	}
+	return Level(l.defaultLevel.Load())
+}
+
+func (l *flogrLogger) SetLevel(level Level) {
+	l.level.Store(int32(level))
+	l.children.Range(func(key, value any) bool {
+		value.(*zapLogger).setDefaultLevel(level)
+		return true
+	})
+}
+
+func (l *flogrLogger) setDefaultLevel(level Level) {
+	l.defaultLevel.Store(int32(level))
+	if Level(l.level.Load()) == EmptyLevel {
+		l.children.Range(func(key, value any) bool {
+			value.(*zapLogger).setDefaultLevel(level)
+			return true
+		})
+	}
+}
+
 // zapLogger is the default Logger implementation
 type zapLogger struct {
-	*zapContext
-	config       Config
-	loggerConfig LoggerConfig
-	outputs      []*zapOutput
+	*flogrLogger
+	outputs []Output
 }
 
 func (l *zapLogger) Name() string {
-	return l.loggerConfig.Name
+	return l.path
 }
 
-func (l *zapLogger) GetLogger(names ...string) Logger {
-	if len(names) == 1 {
-		names = strings.Split(names[0], nameSep)
-	}
-
+func (l *zapLogger) GetLogger(path string) Logger {
 	logger := l
+	names := strings.Split(path, pathSep)
 	for _, name := range names {
 		child, err := logger.getChild(name)
 		if err != nil {
@@ -204,98 +263,110 @@ func (l *zapLogger) getChild(name string) (*zapLogger, error) {
 		return child.(*zapLogger), nil
 	}
 
-	// Compute the name of the child logger
-	qualifiedName := strings.Trim(fmt.Sprintf("%s%s%s", l.loggerConfig.Name, nameSep, name), nameSep)
+	path := strings.Trim(fmt.Sprintf("%s/%s", l.path, name), pathSep)
 
-	// Initialize the child logger's configuration if one is not set.
-	loggerConfig, ok := l.config.GetLogger(qualifiedName)
-	if !ok {
-		loggerConfig = l.loggerConfig
-		loggerConfig.Name = qualifiedName
-		loggerConfig.Level = nil
-	}
-
-	// Populate the child logger configuration with outputs inherited from this logger.
-	for _, output := range l.outputs {
-		outputConfig, ok := loggerConfig.GetOutput(output.config.Name)
-		if !ok {
-			loggerConfig.Output[output.config.Name] = output.config
-		} else {
-			if outputConfig.Sink == nil {
-				outputConfig.Sink = output.config.Sink
-			}
-			if outputConfig.Level == nil {
-				outputConfig.Level = output.config.Level
-			}
-			loggerConfig.Output[outputConfig.Name] = outputConfig
+	var outputs []Output
+	outputNames := make(map[string]int)
+	for i, output := range l.outputs {
+		outputs = append(outputs, output.getChild(name))
+		if output.Name() != "" {
+			outputNames[output.Name()] = i
 		}
 	}
 
-	// Create the child logger.
+	// Initialize the child logger's configuration if one is not set.
+	loggerConfig, ok := l.zapContext.config.GetLogger(path)
+	if ok {
+		for outputName, outputConfig := range loggerConfig.GetOutputs() {
+			var output Output
+			if i, ok := outputNames[outputName]; ok {
+				if outputConfig.Sink == nil {
+					output = outputs[i].getChild(name)
+					if outputConfig.Level != nil {
+						output = output.WithLevel(outputConfig.GetLevel())
+					}
+				} else {
+					sink, err := l.getSink(outputConfig.GetSink())
+					if err != nil {
+						return nil, err
+					}
+					output = newOutput(outputName, sink, outputConfig).getChild(name)
+					if outputConfig.Level == nil {
+						output = output.WithLevel(outputs[i].Level())
+					}
+				}
+				outputs[i] = output
+			} else {
+				sink, err := l.getSink(outputConfig.GetSink())
+				if err != nil {
+					return nil, err
+				}
+				output = newOutput(outputName, sink, outputConfig).getChild(name)
+				outputs = append(outputs, output)
+			}
+		}
+	}
+
 	defaultLevel := Level(l.defaultLevel.Load())
 	level := Level(l.level.Load())
 	if level != EmptyLevel {
 		defaultLevel = level
 	}
-	logger, err := newZapLogger(l.config, loggerConfig, defaultLevel)
-	if err != nil {
-		return nil, err
+
+	// Create the child logger.
+	logger := &zapLogger{
+		flogrLogger: &flogrLogger{
+			zapContext: l.zapContext,
+			config:     loggerConfig,
+			path:       path,
+		},
+		outputs: outputs,
 	}
 
-	// Set the default log level on the child.
+	// Set the logger level.
+	logger.defaultLevel.Store(int32(defaultLevel))
+	if loggerConfig.Level != nil {
+		logger.SetLevel(loggerConfig.GetLevel())
+	}
+
+	// Cache the child logger.
 	l.children.Store(name, logger)
 	return logger, nil
 }
 
-func (l *zapLogger) Level() Level {
-	level := Level(l.level.Load())
-	if level != EmptyLevel {
-		return level
+func (l *zapLogger) WithOutputs(outputs ...Output) Logger {
+	allOutputs := make([]Output, 0, len(l.outputs)+len(outputs))
+	for _, output := range l.outputs {
+		allOutputs = append(allOutputs, output)
 	}
-	return Level(l.defaultLevel.Load())
-}
-
-func (l *zapLogger) SetLevel(level Level) {
-	l.level.Store(int32(level))
-	l.children.Range(func(key, value any) bool {
-		value.(*zapLogger).setDefaultLevel(level)
-		return true
-	})
-}
-
-func (l *zapLogger) setDefaultLevel(level Level) {
-	l.defaultLevel.Store(int32(level))
-	if Level(l.level.Load()) == EmptyLevel {
-		l.children.Range(func(key, value any) bool {
-			value.(*zapLogger).setDefaultLevel(level)
-			return true
-		})
+	for _, output := range outputs {
+		allOutputs = append(allOutputs, output.getChild(l.path))
+	}
+	return &zapLogger{
+		flogrLogger: l.flogrLogger,
+		outputs:     allOutputs,
 	}
 }
 
 func (l *zapLogger) WithFields(fields ...Field) Logger {
-	outputs := make([]*zapOutput, len(l.outputs))
+	outputs := make([]Output, len(l.outputs))
 	for i, output := range l.outputs {
-		outputs[i] = output.WithFields(fields...).(*zapOutput)
+		outputs[i] = output.WithFields(fields...)
 	}
 	return &zapLogger{
-		zapContext:   l.zapContext,
-		config:       l.config,
-		loggerConfig: l.loggerConfig,
-		outputs:      outputs,
+		flogrLogger: l.flogrLogger,
+		outputs:     outputs,
 	}
 }
 
 func (l *zapLogger) WithSkipCalls(calls int) Logger {
-	outputs := make([]*zapOutput, len(l.outputs))
+	outputs := make([]Output, len(l.outputs))
 	for i, output := range l.outputs {
-		outputs[i] = output.WithSkipCalls(calls).(*zapOutput)
+		outputs[i] = output.WithSkipCalls(calls)
 	}
 	return &zapLogger{
-		zapContext:   l.zapContext,
-		config:       l.config,
-		loggerConfig: l.loggerConfig,
-		outputs:      outputs,
+		flogrLogger: l.flogrLogger,
+		outputs:     outputs,
 	}
 }
 

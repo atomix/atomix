@@ -6,6 +6,7 @@ package logging
 
 import (
 	"github.com/mitchellh/go-homedir"
+	"go.uber.org/zap/zapcore"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
@@ -18,119 +19,123 @@ func (t SinkType) String() string {
 	return string(t)
 }
 
-const (
-	// StdoutSinkType is the sink type for stdout
-	StdoutSinkType SinkType = "stdout"
-	// StderrSinkType is the sink type for stderr
-	StderrSinkType SinkType = "stderr"
-	// FileSinkType is the type for a file sink
-	FileSinkType SinkType = "file"
-)
+// Encoding is the encoding for a sink
+type Encoding string
 
-// SinkEncoding is the encoding for a sink
-type SinkEncoding string
-
-func (e SinkEncoding) String() string {
+func (e Encoding) String() string {
 	return string(e)
 }
 
 const (
 	// ConsoleEncoding is an encoding for outputs to the console
-	ConsoleEncoding SinkEncoding = "console"
+	ConsoleEncoding Encoding = "console"
 	// JSONEncoding is an encoding for JSON outputs
-	JSONEncoding SinkEncoding = "json"
-)
-
-const (
-	rootLoggerName = "root"
+	JSONEncoding Encoding = "json"
 )
 
 // Config logging configuration
 type Config struct {
-	Loggers map[string]LoggerConfig `json:"loggers" yaml:"loggers"`
-	Sinks   map[string]SinkConfig   `json:"sinks" yaml:"sinks"`
-}
-
-// GetRootLogger returns the root logger configuration
-func (c Config) GetRootLogger() LoggerConfig {
-	root := c.Loggers[rootLoggerName]
-	if root.Output == nil {
-		defaultSink := ""
-		root.Output = map[string]OutputConfig{
-			"": {
-				Sink: &defaultSink,
-			},
-		}
-	}
-	return root
-}
-
-// GetLoggers returns the configured loggers
-func (c Config) GetLoggers() []LoggerConfig {
-	loggers := make([]LoggerConfig, 0, len(c.Loggers))
-	for name, logger := range c.Loggers {
-		if name != rootLoggerName {
-			logger.Name = name
-			if logger.Output == nil {
-				logger.Output = map[string]OutputConfig{}
-			}
-			loggers = append(loggers, logger)
-		}
-	}
-	return loggers
+	zapcore.EncoderConfig `json:",inline" yaml:",inline"`
+	RootLogger            LoggerConfig            `json:"rootLogger" yaml:"rootLogger"`
+	Loggers               map[string]LoggerConfig `json:"loggers" yaml:"loggers"`
+	Sinks                 map[string]SinkConfig   `json:"sinks" yaml:"sinks"`
 }
 
 // GetLogger returns a logger by name
 func (c Config) GetLogger(name string) (LoggerConfig, bool) {
-	if name == rootLoggerName {
+	if c.Loggers == nil {
 		return LoggerConfig{}, false
 	}
-
 	logger, ok := c.Loggers[name]
 	if ok {
-		logger.Name = name
-		if logger.Output == nil {
-			logger.Output = map[string]OutputConfig{}
+		if logger.Outputs == nil {
+			logger.Outputs = map[string]OutputConfig{}
 		}
 		return logger, true
 	}
-	return LoggerConfig{Output: map[string]OutputConfig{}}, false
+	return LoggerConfig{Outputs: map[string]OutputConfig{}}, false
 }
 
-// GetSinks returns the configured sinks
-func (c Config) GetSinks() []SinkConfig {
-	sinks := []SinkConfig{
-		{
-			Name: "",
-		},
-	}
-	for name, sink := range c.Sinks {
-		sink.Name = name
-		sinks = append(sinks, sink)
-	}
-	return sinks
-}
+const (
+	defaultNameKey    = "logger"
+	defaultMessageKey = "message"
+	defaultLevelKey   = "level"
+	defaultTimeKey    = "timestamp"
+)
 
 // GetSink returns a sink by name
 func (c Config) GetSink(name string) (SinkConfig, bool) {
-	if name == "" {
+	if c.Sinks == nil {
 		return SinkConfig{
-			Name: "",
-		}, true
+			EncoderConfig: c.EncoderConfig,
+		}, false
 	}
 	sink, ok := c.Sinks[name]
-	if ok {
-		sink.Name = name
-		return sink, true
+	if !ok {
+		return SinkConfig{
+			EncoderConfig: c.EncoderConfig,
+		}, false
 	}
-	return SinkConfig{}, false
+
+	if c.MessageKey == "" {
+		c.MessageKey = defaultMessageKey
+	}
+	if c.LevelKey == "" {
+		c.LevelKey = defaultLevelKey
+	}
+	if c.TimeKey == "" {
+		c.TimeKey = defaultTimeKey
+	}
+	if c.NameKey == "" {
+		c.NameKey = defaultNameKey
+	}
+
+	if sink.MessageKey == "" {
+		sink.MessageKey = c.MessageKey
+	}
+	if sink.LevelKey == "" {
+		sink.LevelKey = c.LevelKey
+	}
+	if sink.TimeKey == "" {
+		sink.TimeKey = c.TimeKey
+	}
+	if sink.NameKey == "" {
+		sink.NameKey = c.NameKey
+	}
+	if sink.CallerKey == "" {
+		sink.CallerKey = c.CallerKey
+	}
+	if sink.FunctionKey == "" {
+		sink.FunctionKey = c.FunctionKey
+	}
+	if sink.StacktraceKey == "" {
+		sink.StacktraceKey = c.StacktraceKey
+	}
+	if sink.LineEnding == "" {
+		sink.LineEnding = c.LineEnding
+	}
+	if sink.EncodeLevel == nil {
+		sink.EncodeLevel = c.EncodeLevel
+	}
+	if sink.EncodeTime == nil {
+		sink.EncodeTime = c.EncodeTime
+	}
+	if sink.EncodeDuration == nil {
+		sink.EncodeDuration = c.EncodeDuration
+	}
+	if sink.EncodeCaller == nil {
+		sink.EncodeCaller = c.EncodeCaller
+	}
+	if sink.EncodeName == nil {
+		sink.EncodeName = c.EncodeName
+	}
+	return sink, ok
 }
 
 // LoggerConfig is the configuration for a logger
 type LoggerConfig struct {
-	Name   string                  `json:"name" yaml:"name"`
-	Level  *string                 `json:"level,omitempty" yaml:"level,omitempty"`
-	Output map[string]OutputConfig `json:"output" yaml:"output"`
+	Level   *string                 `json:"level,omitempty" yaml:"level,omitempty"`
+	Outputs map[string]OutputConfig `json:"outputs" yaml:"outputs"`
 }
 
 // GetLevel returns the logger level
@@ -143,29 +148,22 @@ func (c LoggerConfig) GetLevel() Level {
 }
 
 // GetOutputs returns the logger outputs
-func (c LoggerConfig) GetOutputs() []OutputConfig {
-	outputs := c.Output
-	outputsList := make([]OutputConfig, 0, len(outputs))
-	for name, output := range outputs {
-		output.Name = name
-		outputsList = append(outputsList, output)
+func (c LoggerConfig) GetOutputs() map[string]OutputConfig {
+	outputs := c.Outputs
+	if outputs == nil {
+		outputs = make(map[string]OutputConfig)
 	}
-	return outputsList
+	return outputs
 }
 
 // GetOutput returns an output by name
 func (c LoggerConfig) GetOutput(name string) (OutputConfig, bool) {
-	output, ok := c.Output[name]
-	if ok {
-		output.Name = name
-		return output, true
-	}
-	return OutputConfig{}, false
+	output, ok := c.Outputs[name]
+	return output, ok
 }
 
 // OutputConfig is the configuration for a sink output
 type OutputConfig struct {
-	Name  string  `json:"name" yaml:"name"`
 	Sink  *string `json:"sink,omitempty" yaml:"sink,omitempty"`
 	Level *string `json:"level,omitempty" yaml:"level,omitempty"`
 }
@@ -190,27 +188,13 @@ func (c OutputConfig) GetLevel() Level {
 
 // SinkConfig is the configuration for a sink
 type SinkConfig struct {
-	Name     string            `json:"name" yaml:"name"`
-	Encoding *SinkEncoding     `json:"encoding,omitempty" yaml:"encoding,omitempty"`
-	Stdout   *StdoutSinkConfig `json:"stdout" yaml:"stdout,omitempty"`
-	Stderr   *StderrSinkConfig `json:"stderr" yaml:"stderr,omitempty"`
-	File     *FileSinkConfig   `json:"file" yaml:"file,omitempty"`
-}
-
-// GetType returns the sink type
-func (c SinkConfig) GetType() SinkType {
-	if c.Stdout != nil {
-		return StdoutSinkType
-	} else if c.Stderr != nil {
-		return StderrSinkType
-	} else if c.File != nil {
-		return FileSinkType
-	}
-	return StdoutSinkType
+	zapcore.EncoderConfig `json:",inline" yaml:",inline"`
+	Path                  string    `json:"path,omitempty" yaml:"path,omitempty"`
+	Encoding              *Encoding `json:"encoding,omitempty" yaml:"encoding,omitempty"`
 }
 
 // GetEncoding returns the sink encoding
-func (c SinkConfig) GetEncoding() SinkEncoding {
+func (c SinkConfig) GetEncoding() Encoding {
 	encoding := c.Encoding
 	if encoding != nil {
 		return *encoding
@@ -218,56 +202,16 @@ func (c SinkConfig) GetEncoding() SinkEncoding {
 	return ConsoleEncoding
 }
 
-// GetStdoutSinkConfig returns the stdout sink configuration
-func (c SinkConfig) GetStdoutSinkConfig() StdoutSinkConfig {
-	config := c.Stdout
-	if config != nil {
-		return *config
-	}
-	return StdoutSinkConfig{}
-}
-
-// GetStderrSinkConfig returns the stderr sink configuration
-func (c SinkConfig) GetStderrSinkConfig() StderrSinkConfig {
-	config := c.Stderr
-	if config != nil {
-		return *config
-	}
-	return StderrSinkConfig{}
-}
-
-// GetFileSinkConfig returns the file sink configuration
-func (c SinkConfig) GetFileSinkConfig() FileSinkConfig {
-	config := c.File
-	if config != nil {
-		return *config
-	}
-	return FileSinkConfig{}
-}
-
-// StdoutSinkConfig is the configuration for an stdout sink
-type StdoutSinkConfig struct {
-}
-
-// StderrSinkConfig is the configuration for an stderr sink
-type StderrSinkConfig struct {
-}
-
-// FileSinkConfig is the configuration for a file sink
-type FileSinkConfig struct {
-	Path string `json:"path" yaml:"path"`
-}
-
-// load loads the configuration
+// load the flogr configuration
 func load(config *Config) error {
-	bytes, err := os.ReadFile("logging.yaml")
+	bytes, err := os.ReadFile("flogr.yaml")
 	if err == nil {
 		return yaml.Unmarshal(bytes, config)
 	} else if !os.IsNotExist(err) {
 		return err
 	}
 
-	bytes, err = os.ReadFile(".atomix/logging.yaml")
+	bytes, err = os.ReadFile(filepath.Join(".atomix", "flogr.yaml"))
 	if err == nil {
 		return yaml.Unmarshal(bytes, config)
 	} else if !os.IsNotExist(err) {
@@ -276,7 +220,7 @@ func load(config *Config) error {
 
 	home, err := homedir.Dir()
 	if err == nil {
-		bytes, err = os.ReadFile(filepath.Join(home, ".atomix/logging.yaml"))
+		bytes, err = os.ReadFile(filepath.Join(home, ".atomix", "flogr.yaml"))
 		if err == nil {
 			return yaml.Unmarshal(bytes, config)
 		} else if !os.IsNotExist(err) {
@@ -284,7 +228,7 @@ func load(config *Config) error {
 		}
 	}
 
-	bytes, err = os.ReadFile("/etc/atomix/logging.yaml")
+	bytes, err = os.ReadFile("/etc/atomix/flogr.yaml")
 	if err == nil {
 		return yaml.Unmarshal(bytes, config)
 	} else if !os.IsNotExist(err) {

@@ -2,19 +2,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+timeEncoder: RFC3339
+
+rootLogger:
+  level: info
+  outputs:
+    stdout:
+      sink: stdout
+
 loggers:
-  root:
-    level: info
-    output:
-      stdout:
-        sink: stdout
-      file:
-        sink: file
   test/1:
     level: debug
   test/2:
     level: warn
-    output:
+    outputs:
       stdout-1:
         sink: stdout-1
         level: info
@@ -22,7 +23,7 @@ loggers:
     level: info
   test/3:
     level: info
-    output:
+    outputs:
       stdout:
         level: info
       stdout-1:
@@ -30,17 +31,18 @@ loggers:
         level: warn
   test/kafka:
     level: info
-    output:
+    outputs:
       kafka:
         sink: kafka-1
+
 sinks:
   stdout:
+    path: stdout
     encoding: console
-    stdout: {}
+    timeEncoder: RFC3339
   stdout-1:
+    path: stdout
     encoding: json
-    stdout: {}
   file:
+    path: file://test.log
     encoding: json
-    file:
-      path: test.log

@@ -6,101 +6,14 @@ package logging
 
 import (
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"sync"
 )
-
-func newZapOutput(logger LoggerConfig, output OutputConfig, sink SinkConfig) (*zapOutput, error) {
-	zapConfig := zap.Config{}
-	zapConfig.Level = levelToAtomicLevel(output.GetLevel())
-	zapConfig.Encoding = string(sink.GetEncoding())
-	zapConfig.EncoderConfig.EncodeName = zapcore.FullNameEncoder
-	zapConfig.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	zapConfig.EncoderConfig.EncodeDuration = zapcore.NanosDurationEncoder
-	zapConfig.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-	zapConfig.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
-	zapConfig.EncoderConfig.NameKey = "logger"
-	zapConfig.EncoderConfig.MessageKey = "message"
-	zapConfig.EncoderConfig.LevelKey = "level"
-	zapConfig.EncoderConfig.TimeKey = "timestamp"
-	zapConfig.EncoderConfig.CallerKey = "caller"
-	zapConfig.EncoderConfig.StacktraceKey = "trace"
-
-	var encoder zapcore.Encoder
-	switch sink.GetEncoding() {
-	case ConsoleEncoding:
-		encoder = zapcore.NewConsoleEncoder(zapConfig.EncoderConfig)
-	case JSONEncoding:
-		encoder = zapcore.NewJSONEncoder(zapConfig.EncoderConfig)
-	}
-
-	var path string
-	switch sink.GetType() {
-	case StdoutSinkType:
-		path = StdoutSinkType.String()
-	case StderrSinkType:
-		path = StderrSinkType.String()
-	case FileSinkType:
-		path = sink.GetFileSinkConfig().Path
-	}
-
-	writer, err := getWriter(path)
-	if err != nil {
-		return nil, err
-	}
-
-	atomLevel := zap.AtomicLevel{}
-	switch output.GetLevel() {
-	case DebugLevel:
-		atomLevel = zap.NewAtomicLevelAt(zapcore.DebugLevel)
-	case InfoLevel:
-		atomLevel = zap.NewAtomicLevelAt(zapcore.InfoLevel)
-	case WarnLevel:
-		atomLevel = zap.NewAtomicLevelAt(zapcore.WarnLevel)
-	case ErrorLevel:
-		atomLevel = zap.NewAtomicLevelAt(zapcore.ErrorLevel)
-	case PanicLevel:
-		atomLevel = zap.NewAtomicLevelAt(zapcore.PanicLevel)
-	case FatalLevel:
-		atomLevel = zap.NewAtomicLevelAt(zapcore.FatalLevel)
-	}
-
-	zapLogger, err := zapConfig.Build(zap.AddCallerSkip(4))
-	if err != nil {
-		return nil, err
-	}
-
-	zapLogger = zapLogger.WithOptions(
-		zap.WrapCore(
-			func(zapcore.Core) zapcore.Core {
-				return zapcore.NewCore(encoder, writer, &atomLevel)
-			}))
-	return &zapOutput{
-		config: output,
-		logger: zapLogger.Named(logger.Name),
-	}, nil
-}
-
-var writers = make(map[string]zapcore.WriteSyncer)
-var writersMu = &sync.Mutex{}
-
-func getWriter(url string) (zapcore.WriteSyncer, error) {
-	writersMu.Lock()
-	defer writersMu.Unlock()
-	writer, ok := writers[url]
-	if !ok {
-		ws, _, err := zap.Open(url)
-		if err != nil {
-			return nil, err
-		}
-		writer = ws
-		writers[url] = writer
-	}
-	return writer, nil
-}
 
 // Output is a logging output
 type Output interface {
+	Name() string
+	Level() Level
+	getChild(name string) Output
+	WithLevel(level Level) Output
 	WithFields(fields ...Field) Output
 	WithSkipCalls(calls int) Output
 	Debug(msg string, fields ...Field)
@@ -112,23 +25,76 @@ type Output interface {
 	Sync() error
 }
 
+type OutputOption func(*OutputConfig)
+
+func WithLevel(level Level) OutputOption {
+	levelString := level.String()
+	return func(config *OutputConfig) {
+		config.Level = &levelString
+	}
+}
+
+// NewOutput creates a new logger output
+func NewOutput(sink Sink, opts ...OutputOption) Output {
+	var config OutputConfig
+	for _, opt := range opts {
+		opt(&config)
+	}
+	return newOutput("", sink, config)
+}
+
+func newOutput(name string, sink Sink, config OutputConfig) Output {
+	return &zapOutput{
+		name:  name,
+		sink:  sink,
+		level: config.GetLevel(),
+	}
+}
+
 // zapOutput is a logging output implementation
 type zapOutput struct {
-	config OutputConfig
-	logger *zap.Logger
+	name  string
+	sink  Sink
+	level Level
+}
+
+func (o *zapOutput) Name() string {
+	return o.name
+}
+
+func (o *zapOutput) Level() Level {
+	return o.level
+}
+
+func (o *zapOutput) getChild(name string) Output {
+	return &zapOutput{
+		name:  o.name,
+		sink:  o.sink.getChild(name),
+		level: o.level,
+	}
+}
+
+func (o *zapOutput) WithLevel(level Level) Output {
+	return &zapOutput{
+		name:  o.name,
+		sink:  o.sink,
+		level: level,
+	}
 }
 
 func (o *zapOutput) WithFields(fields ...Field) Output {
 	return &zapOutput{
-		config: o.config,
-		logger: o.logger.With(o.getZapFields(fields...)...),
+		name:  o.name,
+		sink:  o.sink.WithFields(fields...),
+		level: o.level,
 	}
 }
 
 func (o *zapOutput) WithSkipCalls(calls int) Output {
 	return &zapOutput{
-		config: o.config,
-		logger: o.logger.WithOptions(zap.AddCallerSkip(calls)),
+		name:  o.name,
+		sink:  o.sink.WithSkipCalls(calls),
+		level: o.level,
 	}
 }
 
@@ -144,31 +110,43 @@ func (o *zapOutput) getZapFields(fields ...Field) []zap.Field {
 }
 
 func (o *zapOutput) Debug(msg string, fields ...Field) {
-	o.logger.Debug(msg, o.getZapFields(fields...)...)
+	if o.level.Enabled(DebugLevel) {
+		o.sink.Debug(msg, fields...)
+	}
 }
 
 func (o *zapOutput) Info(msg string, fields ...Field) {
-	o.logger.Info(msg, o.getZapFields(fields...)...)
+	if o.level.Enabled(InfoLevel) {
+		o.sink.Info(msg, fields...)
+	}
 }
 
 func (o *zapOutput) Error(msg string, fields ...Field) {
-	o.logger.Error(msg, o.getZapFields(fields...)...)
+	if o.level.Enabled(ErrorLevel) {
+		o.sink.Error(msg, fields...)
+	}
 }
 
 func (o *zapOutput) Fatal(msg string, fields ...Field) {
-	o.logger.Fatal(msg, o.getZapFields(fields...)...)
+	if o.level.Enabled(FatalLevel) {
+		o.sink.Fatal(msg, fields...)
+	}
 }
 
 func (o *zapOutput) Panic(msg string, fields ...Field) {
-	o.logger.Panic(msg, o.getZapFields(fields...)...)
+	if o.level.Enabled(PanicLevel) {
+		o.sink.Panic(msg, fields...)
+	}
 }
 
 func (o *zapOutput) Warn(msg string, fields ...Field) {
-	o.logger.Warn(msg, o.getZapFields(fields...)...)
+	if o.level.Enabled(WarnLevel) {
+		o.sink.Warn(msg, fields...)
+	}
 }
 
 func (o *zapOutput) Sync() error {
-	return o.logger.Sync()
+	return o.sink.Sync()
 }
 
 var _ Output = &zapOutput{}

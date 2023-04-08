@@ -5,8 +5,8 @@
 package logging
 
 import (
-	zp "go.uber.org/zap"
-	zc "go.uber.org/zap/zapcore"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"strings"
 )
 
@@ -30,27 +30,32 @@ const (
 	PanicLevel
 )
 
+// Enabled indicates whether the log level is enabled
+func (l Level) Enabled(level Level) bool {
+	return l <= level
+}
+
 // String :
 func (l Level) String() string {
 	return [...]string{"", "debug", "info", "warn", "error", "fatal", "panic"}[l]
 }
 
-func levelToAtomicLevel(l Level) zp.AtomicLevel {
+func levelToAtomicLevel(l Level) zap.AtomicLevel {
 	switch l {
 	case DebugLevel:
-		return zp.NewAtomicLevelAt(zc.DebugLevel)
+		return zap.NewAtomicLevelAt(zapcore.DebugLevel)
 	case InfoLevel:
-		return zp.NewAtomicLevelAt(zc.InfoLevel)
+		return zap.NewAtomicLevelAt(zapcore.InfoLevel)
 	case WarnLevel:
-		return zp.NewAtomicLevelAt(zc.WarnLevel)
+		return zap.NewAtomicLevelAt(zapcore.WarnLevel)
 	case ErrorLevel:
-		return zp.NewAtomicLevelAt(zc.ErrorLevel)
+		return zap.NewAtomicLevelAt(zapcore.ErrorLevel)
 	case FatalLevel:
-		return zp.NewAtomicLevelAt(zc.FatalLevel)
+		return zap.NewAtomicLevelAt(zapcore.FatalLevel)
 	case PanicLevel:
-		return zp.NewAtomicLevelAt(zc.PanicLevel)
+		return zap.NewAtomicLevelAt(zapcore.PanicLevel)
 	default:
-		return zp.NewAtomicLevelAt(zc.FatalLevel)
+		return zap.NewAtomicLevelAt(zapcore.FatalLevel)
 	}
 }
 
