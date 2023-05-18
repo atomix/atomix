@@ -6,10 +6,11 @@ package network
 
 import (
 	"context"
-	"google.golang.org/grpc/test/bufconn"
 	"io"
 	"net"
 	"sync"
+
+	"google.golang.org/grpc/test/bufconn"
 )
 
 // Driver is a network driver.
@@ -59,10 +60,10 @@ func (n *localDriver) Listen(address string) (net.Listener, error) {
 	n.listeners[address] = lis
 	n.listenersMu.Unlock()
 
-	n.watchersMu.RLock()
+	n.watchersMu.Lock()
 	watchers := n.watchers[address]
 	delete(n.watchers, address)
-	n.watchersMu.RUnlock()
+	n.watchersMu.Unlock()
 
 	for _, watcher := range watchers {
 		watcher <- lis
