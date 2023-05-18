@@ -11,6 +11,8 @@ on:
     paths:
       - 'stores/raft/**'
   pull_request:
+    paths:
+      - 'stores/raft/**'
   workflow_dispatch:
 
 concurrency:

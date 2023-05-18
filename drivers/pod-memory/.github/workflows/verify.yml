@@ -11,6 +11,8 @@ on:
     paths:
       - 'drivers/pod-memory/**'
   pull_request:
+    paths:
+      - 'drivers/pod-memory/**'
   workflow_dispatch:
 
 concurrency:

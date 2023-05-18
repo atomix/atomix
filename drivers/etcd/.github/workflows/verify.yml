@@ -11,6 +11,8 @@ on:
     paths:
       - 'drivers/etcd/**'
   pull_request:
+    paths:
+      - 'drivers/etcd/**'
   workflow_dispatch:
 
 concurrency:

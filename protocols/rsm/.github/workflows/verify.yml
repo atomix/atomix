@@ -11,6 +11,8 @@ on:
     paths:
       - 'protocols/rsm/**'
   pull_request:
+    paths:
+      - 'protocols/rsm/**'
   workflow_dispatch:
 
 concurrency:

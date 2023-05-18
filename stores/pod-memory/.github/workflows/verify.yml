@@ -11,6 +11,8 @@ on:
     paths:
       - 'stores/pod-memory/**'
   pull_request:
+    paths:
+      - 'stores/pod-memory/**'
   workflow_dispatch:
 
 concurrency:

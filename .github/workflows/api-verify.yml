@@ -14,6 +14,8 @@ on:
     paths:
       - 'api/**'
   pull_request:
+    paths:
+      - 'api/**'
   workflow_dispatch:
 
 concurrency:

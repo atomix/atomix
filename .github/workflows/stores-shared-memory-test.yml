@@ -15,6 +15,9 @@ on:
       - 'stores/shared-memory/**'
       - 'testing/**'
   pull_request:
+    paths:
+      - 'stores/shared-memory/**'
+      - 'testing/**'
   workflow_dispatch:
 
 concurrency:

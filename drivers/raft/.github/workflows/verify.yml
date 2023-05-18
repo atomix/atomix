@@ -11,6 +11,8 @@ on:
     paths:
       - 'drivers/raft/**'
   pull_request:
+    paths:
+      - 'drivers/raft/**'
   workflow_dispatch:
 
 concurrency:

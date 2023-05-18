@@ -12,6 +12,9 @@ on:
       - 'sidecar/**'
       - 'testing/**'
   pull_request:
+    paths:
+      - 'sidecar/**'
+      - 'testing/**'
   workflow_dispatch:
 
 concurrency:

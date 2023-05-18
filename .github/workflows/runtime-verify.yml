@@ -14,6 +14,8 @@ on:
     paths:
       - 'runtime/**'
   pull_request:
+    paths:
+      - 'runtime/**'
   workflow_dispatch:
 
 concurrency:

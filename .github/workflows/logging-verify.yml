@@ -14,6 +14,8 @@ on:
     paths:
       - 'logging/**'
   pull_request:
+    paths:
+      - 'logging/**'
   workflow_dispatch:
 
 concurrency:
