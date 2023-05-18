@@ -11,6 +11,8 @@ on:
     paths:
       - 'drivers/shared-memory/**'
   pull_request:
+    paths:
+      - 'drivers/shared-memory/**'
   workflow_dispatch:
 
 concurrency:

@@ -11,6 +11,8 @@ on:
     paths:
       - 'drivers/redis/**'
   pull_request:
+    paths:
+      - 'drivers/redis/**'
   workflow_dispatch:
 
 concurrency:

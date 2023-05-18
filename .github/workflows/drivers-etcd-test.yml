@@ -16,6 +16,10 @@ on:
       - 'stores/etcd/**'
       - 'testing/**'
   pull_request:
+    paths:
+      - 'drivers/etcd/**'
+      - 'stores/etcd/**'
+      - 'testing/**'
   workflow_dispatch:
 
 concurrency:
