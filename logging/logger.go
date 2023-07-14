@@ -336,9 +336,7 @@ func (l *zapLogger) getChild(name string) (*zapLogger, error) {
 
 func (l *zapLogger) WithOutputs(outputs ...Output) Logger {
 	allOutputs := make([]Output, 0, len(l.outputs)+len(outputs))
-	for _, output := range l.outputs {
-		allOutputs = append(allOutputs, output)
-	}
+	allOutputs = append(allOutputs, l.outputs...)
 	for _, output := range outputs {
 		allOutputs = append(allOutputs, output.getChild(l.path))
 	}
