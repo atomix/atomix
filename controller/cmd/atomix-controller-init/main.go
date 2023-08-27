@@ -243,7 +243,7 @@ func getCommand() *cobra.Command {
 	cmd.Flags().StringP("namespace", "n", "", "the namespace for which to initialize the controller")
 	cmd.Flags().StringP("service", "s", "", "the service for which to initialize the controller")
 	cmd.Flags().StringArray("webhook", []string{}, "the webhooks to configure")
-	cmd.Flags().StringArray("crd", []string{}, "the CRDs to ugprade")
+	cmd.Flags().StringArray("crd", []string{}, "the CRDs to upgrade")
 	cmd.Flags().String("certs", "/etc/atomix/certs", "the path to which to write the certificates")
 	return cmd
 }
