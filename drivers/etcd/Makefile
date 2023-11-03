@@ -2,4 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+.PHONY: build
+build:
 	go build ./v3/driver/...

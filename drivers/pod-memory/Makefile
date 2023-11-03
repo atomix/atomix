@@ -5,3 +5,7 @@
 .PHONY: build
 build:
 	go build ./v1/driver/...
+
+.PHONY: test
+test:
+	go test ./...
