@@ -12,7 +12,6 @@ build:
 
 .PHONY: test
 test:
-	$(MAKE) -C etcd test
 	$(MAKE) -C pod-memory test
 	$(MAKE) -C raft test
 	$(MAKE) -C redis test

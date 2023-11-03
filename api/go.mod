@@ -1,6 +1,6 @@
 module github.com/atomix/atomix/api
 
-go 1.19
+go 1.21
 
 require (
 	github.com/gogo/protobuf v1.3.2

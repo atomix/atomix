@@ -1,13 +1,13 @@
 module github.com/atomix/atomix/runtime
 
-go 1.19
+go 1.21
 
 require (
 	github.com/atomix/atomix/api v1.1.0
-	github.com/cenkalti/backoff v2.2.1+incompatible
+	github.com/failsafe-go/failsafe-go v0.3.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.24.0
 	google.golang.org/grpc v1.46.0
 	gopkg.in/yaml.v3 v3.0.1

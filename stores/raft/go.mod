@@ -1,13 +1,13 @@
 module github.com/atomix/atomix/stores/raft
 
-go 1.19
+go 1.21
 
 require (
 	github.com/atomix/atomix/api v1.1.0
 	github.com/atomix/atomix/controller v1.0.1-0.20230301233247-275080a3c6af
 	github.com/atomix/atomix/protocols/rsm v1.1.1
 	github.com/atomix/atomix/runtime v1.1.2-0.20230331005836-16ae30b766af
-	github.com/cenkalti/backoff v2.2.1+incompatible
+	github.com/failsafe-go/failsafe-go v0.3.1
 	github.com/go-logr/logr v1.2.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/lni/dragonboat/v3 v3.3.5
@@ -27,8 +27,9 @@ require (
 	github.com/VictoriaMetrics/metrics v1.6.2 // indirect
 	github.com/armon/go-metrics v0.3.10 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bits-and-blooms/bitset v1.3.1 // indirect
+	github.com/bits-and-blooms/bitset v1.8.0 // indirect
 	github.com/bits-and-blooms/bloom/v3 v3.3.1 // indirect
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cockroachdb/errors v1.7.5 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20190617123548-eb05cc24525f // indirect

@@ -1,6 +1,6 @@
 module github.com/atomix/atomix/drivers/shared-memory
 
-go 1.19
+go 1.21
 
 require (
 	github.com/atomix/atomix/api v1.1.0

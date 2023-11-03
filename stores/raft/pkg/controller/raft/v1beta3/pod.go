@@ -7,14 +7,18 @@ package v1beta3
 import (
 	"context"
 	"fmt"
+	"io"
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/atomix/atomix/api/errors"
 	"github.com/atomix/atomix/runtime/pkg/logging"
 	"github.com/atomix/atomix/runtime/pkg/utils/grpc/interceptors"
-	raftv1 "github.com/atomix/atomix/stores/raft/api/v1"
-	"github.com/cenkalti/backoff"
+	"github.com/failsafe-go/failsafe-go"
+	"github.com/failsafe-go/failsafe-go/retrypolicy"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"io"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,15 +30,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"strconv"
-	"sync"
-	"time"
 
-	raftv1beta3 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta3"
+	raftv1 "github.com/atomix/atomix/stores/raft/api/v1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	raftv1beta3 "github.com/atomix/atomix/stores/raft/pkg/apis/raft/v1beta3"
 )
+
+var backoffRetryPolicy = retrypolicy.Builder[any]().
+	HandleIf(func(_ any, err error) bool {
+		return !errors.IsCanceled(err)
+	}).
+	WithBackoffFactor(500*time.Millisecond, time.Minute, 1.5).
+	WithJitterFactor(.5).
+	WithMaxDuration(15 * time.Minute).
+	Build()
 
 func addPodController(mgr manager.Manager) error {
 	options := controller.Options{
@@ -188,12 +201,9 @@ func (r *PodReconciler) tryWatch(ctx context.Context, log logging.Logger, pod *c
 	}()
 
 	node := raftv1.NewNodeClient(conn)
-	return backoff.Retry(func() error {
+	return failsafe.NewExecutor[any](backoffRetryPolicy).WithContext(ctx).Run(func() error {
 		stream, err := node.Watch(ctx, &raftv1.WatchRequest{})
 		if err != nil {
-			if errors.IsCanceled(err) {
-				return backoff.Permanent(err)
-			}
 			if !errors.IsUnavailable(err) {
 				log.Warn(err)
 			}
@@ -414,7 +424,7 @@ func (r *PodReconciler) tryWatch(ctx context.Context, log logging.Logger, pod *c
 					})
 			}
 		}
-	}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
+	})
 }
 
 func (r *PodReconciler) updateReplicas(ctx context.Context, log logging.Logger, pod *corev1.Pod, updater func(status *raftv1beta3.RaftReplicaStatus) bool) error {
@@ -444,9 +454,9 @@ func (r *PodReconciler) updateReplicas(ctx context.Context, log logging.Logger, 
 }
 
 func (r *PodReconciler) updateReplica(ctx context.Context, log logging.Logger, name types.NamespacedName, updater func(status *raftv1beta3.RaftReplicaStatus) bool) error {
-	return backoff.Retry(func() error {
+	return failsafe.NewExecutor[any](backoffRetryPolicy).WithContext(ctx).Run(func() error {
 		return r.tryUpdateReplica(ctx, log, name, updater)
-	}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
+	})
 }
 
 func (r *PodReconciler) tryUpdateReplica(ctx context.Context, log logging.Logger, name types.NamespacedName, updater func(status *raftv1beta3.RaftReplicaStatus) bool) error {
@@ -511,12 +521,12 @@ func (r *PodReconciler) getPartition(ctx context.Context, log logging.Logger, po
 func (r *PodReconciler) recordReplicaEvent(
 	ctx context.Context, log logging.Logger, pod *corev1.Pod, groupID raftv1.GroupID, memberID raftv1.MemberID,
 	updater func(*raftv1beta3.RaftReplicaStatus) bool, recorder func(*raftv1beta3.RaftReplica)) {
-	_ = backoff.Retry(func() error {
+	_ = failsafe.Run(func() error {
 		return r.tryRecordReplicaEvent(ctx, log.WithFields(
 			logging.Int64("GroupID", int64(groupID)),
 			logging.Int64("MemberID", int64(memberID))),
 			pod, raftv1beta3.GroupID(groupID), raftv1beta3.MemberID(memberID), updater, recorder)
-	}, backoff.NewExponentialBackOff())
+	}, backoffRetryPolicy)
 }
 
 func (r *PodReconciler) tryRecordReplicaEvent(
@@ -544,11 +554,11 @@ func (r *PodReconciler) tryRecordReplicaEvent(
 func (r *PodReconciler) recordPartitionEvent(
 	ctx context.Context, log logging.Logger, pod *corev1.Pod, groupID raftv1.GroupID,
 	updater func(status *raftv1beta3.RaftPartitionStatus) bool, recorder func(*raftv1beta3.RaftPartition)) {
-	_ = backoff.Retry(func() error {
+	_ = failsafe.Run(func() error {
 		return r.tryRecordPartitionEvent(ctx,
 			log.WithFields(logging.Int64("GroupID", int64(groupID))),
 			pod, raftv1beta3.GroupID(groupID), updater, recorder)
-	}, backoff.NewExponentialBackOff())
+	}, backoffRetryPolicy)
 }
 
 func (r *PodReconciler) tryRecordPartitionEvent(

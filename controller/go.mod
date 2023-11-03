@@ -1,10 +1,11 @@
 module github.com/atomix/atomix/controller
 
-go 1.19
+go 1.21
 
 require (
 	github.com/atomix/atomix/api v1.0.0
 	github.com/atomix/atomix/runtime v1.0.0
+	github.com/failsafe-go/failsafe-go v0.3.1
 	github.com/go-logr/logr v1.2.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/spf13/cobra v1.4.0
