@@ -1,6 +1,6 @@
 module github.com/atomix/atomix/stores/shared-memory
 
-go 1.19
+go 1.21
 
 require (
 	github.com/atomix/atomix/controller v1.0.1-0.20230301233247-275080a3c6af
