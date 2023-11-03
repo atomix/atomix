@@ -6,24 +6,35 @@ package k8s
 
 import (
 	"context"
+	"os"
+	"time"
+
+	"github.com/failsafe-go/failsafe-go"
+	"github.com/failsafe-go/failsafe-go/retrypolicy"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
-	"os"
 	crclient "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"time"
 )
 
 var log = logf.Log.WithName("leader")
+var leaderRetryPolicy = retrypolicy.Builder[any]().
+	HandleIf(func(_ any, err error) bool {
+		return errors.IsAlreadyExists(err)
+	}).
+	OnFailure(func(e failsafe.ExecutionEvent[any]) {
+		log.Info("Not the leader. Waiting.")
+	}).
+	WithMaxRetries(-1).
+	WithBackoff(time.Second, 16*time.Second).
+	WithJitterFactor(.2).
+	Build()
 
 const (
 	podNameEnv      = "POD_NAME"
 	podNamespaceEnv = "POD_NAMESPACE"
-
-	maxBackoffInterval = time.Second * 16
 )
 
 // BecomeLeader ensures that the current pod is the leader within its namespace. If
@@ -103,29 +114,15 @@ func BecomeLeader(ctx context.Context) error {
 	}
 
 	// try to create a lock
-	backoff := time.Second
-	for {
-		err := client.Create(ctx, cm)
-		switch {
-		case err == nil:
-			log.Info("Became the leader.")
-			return nil
-		case errors.IsAlreadyExists(err):
-			log.Info("Not the leader. Waiting.")
-			select {
-			case <-time.After(wait.Jitter(backoff, .2)):
-				if backoff < maxBackoffInterval {
-					backoff *= 2
-				}
-				continue
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		default:
-			log.Error(err, "unknown error creating configmap")
-			return err
-		}
+	err = failsafe.NewExecutor[any](leaderRetryPolicy).WithContext(ctx).Run(func() error {
+		return client.Create(ctx, cm)
+	})
+	if err != nil {
+		log.Error(err, "unknown error creating configmap")
+	} else {
+		log.Info("Became the leader.")
 	}
+	return err
 }
 
 // myOwnerRef returns an OwnerReference that corresponds to the controller.

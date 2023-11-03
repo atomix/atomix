@@ -6,15 +6,18 @@ package interceptors
 
 import (
 	"context"
-	"github.com/atomix/atomix/runtime/pkg/logging"
-	"github.com/cenkalti/backoff"
+	"io"
+	"sync"
+	"time"
+
+	"github.com/failsafe-go/failsafe-go"
+	"github.com/failsafe-go/failsafe-go/retrypolicy"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"io"
-	"sync"
-	"time"
+
+	"github.com/atomix/atomix/runtime/pkg/logging"
 )
 
 var log = logging.GetLogger()
@@ -31,21 +34,15 @@ func RetryingUnaryClientInterceptor(callOpts ...RetryingCallOption) func(ctx con
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		grpcOpts, retryOpts := filterCallOptions(opts)
 		callOpts := newCallOptions(connOpts, retryOpts)
-		b := backoff.NewExponentialBackOff()
-		if callOpts.initialDelay != nil {
-			b.InitialInterval = *callOpts.initialDelay
-		}
-		if callOpts.maxDelay != nil {
-			b.MaxInterval = *callOpts.maxDelay
-		}
-		return backoff.Retry(func() error {
+		retryPolicy := retryPolicyBuilder(callOpts.initialDelay, callOpts.maxDelay).Build()
+		return failsafe.Run(func() error {
 			log.Debugf("SendMsg %.250s", req)
 			callCtx := newCallContext(ctx, callOpts)
 			if err := invoker(callCtx, method, req, reply, cc, grpcOpts...); err != nil {
 				if isContextError(err) {
 					if ctx.Err() != nil {
 						log.Debugf("SendMsg %.250s: error", req, err)
-						return backoff.Permanent(err)
+						return NewPermanentError(err)
 					} else if callOpts.perCallTimeout != nil {
 						log.Debugf("SendMsg %.250s: error", req, err)
 						return err
@@ -56,11 +53,11 @@ func RetryingUnaryClientInterceptor(callOpts ...RetryingCallOption) func(ctx con
 					return err
 				}
 				log.Warnf("SendMsg %.250s: error", req, err)
-				return backoff.Permanent(err)
+				return NewPermanentError(err)
 			}
 			log.Debugf("RecvMsg %.250s", reply)
 			return nil
-		}, b)
+		}, retryPolicy)
 	}
 }
 
@@ -233,11 +230,14 @@ func (s *retryingClientStream) SendMsg(m interface{}) error {
 }
 
 func (s *retryingClientStream) retrySendMsg(m interface{}) error {
-	return backoff.RetryNotify(func() error {
+	retryPolicy := retryPolicyBuilder(nil, nil).
+		OnRetryScheduled(func(f failsafe.ExecutionScheduledEvent[any]) {
+			log.Debugf("SendMsg %.250s: retry after %.250s", m, f.Delay, f.LastError())
+		}).
+		Build()
+	return failsafe.Run(func() error {
 		return s.trySendMsg(m)
-	}, backoff.NewExponentialBackOff(), func(err error, duration time.Duration) {
-		log.Debugf("SendMsg %.250s: retry after %.250s", m, duration, err)
-	})
+	}, retryPolicy)
 }
 
 func (s *retryingClientStream) trySendMsg(m interface{}) error {
@@ -249,7 +249,7 @@ func (s *retryingClientStream) trySendMsg(m interface{}) error {
 	if isContextError(err) {
 		if s.ctx.Err() != nil {
 			log.Debugf("SendMsg %.250s: error", m, err)
-			return backoff.Permanent(err)
+			return NewPermanentError(err)
 		} else if s.opts.perCallTimeout != nil {
 			log.Debugf("SendMsg %.250s: error", m, err)
 			if err := s.tryStream(); err != nil {
@@ -268,7 +268,7 @@ func (s *retryingClientStream) trySendMsg(m interface{}) error {
 		return s.trySendMsg(m)
 	}
 	log.Warnf("SendMsg %.250s: error", m, err)
-	return backoff.Permanent(err)
+	return NewPermanentError(err)
 }
 
 func (s *retryingClientStream) RecvMsg(m interface{}) error {
@@ -276,11 +276,14 @@ func (s *retryingClientStream) RecvMsg(m interface{}) error {
 }
 
 func (s *retryingClientStream) retryRecvMsg(m interface{}) error {
-	return backoff.RetryNotify(func() error {
+	retryPolicy := retryPolicyBuilder(nil, nil).
+		OnRetryScheduled(func(f failsafe.ExecutionScheduledEvent[any]) {
+			log.Debugf("RecvMsg: retry after %s", f.Delay, f.LastError())
+		}).
+		Build()
+	return failsafe.Run(func() error {
 		return s.tryRecvMsg(m)
-	}, backoff.NewExponentialBackOff(), func(err error, duration time.Duration) {
-		log.Debugf("RecvMsg: retry after %s", duration, err)
-	})
+	}, retryPolicy)
 }
 
 func (s *retryingClientStream) tryRecvMsg(m interface{}) error {
@@ -291,12 +294,12 @@ func (s *retryingClientStream) tryRecvMsg(m interface{}) error {
 	}
 	if err == io.EOF {
 		log.Debug("RecvMsg: EOF")
-		return backoff.Permanent(err)
+		return NewPermanentError(err)
 	}
 	if isContextError(err) {
 		if s.ctx.Err() != nil {
 			log.Debug("RecvMsg: error", err)
-			return backoff.Permanent(err)
+			return NewPermanentError(err)
 		} else if s.opts.perCallTimeout != nil {
 			log.Debug("RecvMsg: error", err)
 			if err := s.tryStream(); err != nil {
@@ -315,20 +318,16 @@ func (s *retryingClientStream) tryRecvMsg(m interface{}) error {
 		return s.tryRecvMsg(m)
 	}
 	log.Warn("RecvMsg: error", err)
-	return backoff.Permanent(err)
+	return NewPermanentError(err)
 }
 
 func (s *retryingClientStream) retryStream() error {
-	b := backoff.NewExponentialBackOff()
-	if s.opts.initialDelay != nil {
-		b.InitialInterval = *s.opts.initialDelay
-	}
-	if s.opts.maxDelay != nil {
-		b.MaxInterval = *s.opts.maxDelay
-	}
-	return backoff.RetryNotify(s.tryStream, backoff.NewExponentialBackOff(), func(err error, duration time.Duration) {
-		log.Debugf("Stream: retry after %s", duration, err)
-	})
+	retryPolicy := retryPolicyBuilder(s.opts.initialDelay, s.opts.maxDelay).
+		OnRetryScheduled(func(f failsafe.ExecutionScheduledEvent[any]) {
+			log.Debugf("Stream: retry after %s", f.Delay, f.LastError())
+		}).
+		Build()
+	return failsafe.Run(s.tryStream, retryPolicy)
 }
 
 func (s *retryingClientStream) tryStream() error {
@@ -340,7 +339,7 @@ func (s *retryingClientStream) tryStream() error {
 		if isContextError(err) {
 			if s.ctx.Err() != nil {
 				log.Debug("Stream: error", err)
-				return backoff.Permanent(err)
+				return NewPermanentError(err)
 			} else if s.opts.perCallTimeout != nil {
 				log.Debug("Stream: error", err)
 				return err
@@ -351,7 +350,7 @@ func (s *retryingClientStream) tryStream() error {
 			return err
 		}
 		log.Warn("Stream: error", err)
-		return backoff.Permanent(err)
+		return NewPermanentError(err)
 	}
 
 	msgs := s.buffer.list()
@@ -361,7 +360,7 @@ func (s *retryingClientStream) tryStream() error {
 			if isContextError(err) {
 				if s.ctx.Err() != nil {
 					log.Debugf("SendMsg %.250s: error", m, err)
-					return backoff.Permanent(err)
+					return NewPermanentError(err)
 				} else if s.opts.perCallTimeout != nil {
 					log.Debugf("SendMsg %.250s: error", m, err)
 					return err
@@ -372,7 +371,7 @@ func (s *retryingClientStream) tryStream() error {
 				return err
 			}
 			log.Warnf("SendMsg %.250s: error", m, err)
-			return backoff.Permanent(err)
+			return NewPermanentError(err)
 		}
 	}
 
@@ -382,7 +381,7 @@ func (s *retryingClientStream) tryStream() error {
 			if isContextError(err) {
 				if s.ctx.Err() != nil {
 					log.Debug("CloseSend: error", err)
-					return backoff.Permanent(err)
+					return NewPermanentError(err)
 				} else if s.opts.perCallTimeout != nil {
 					log.Debug("CloseSend: error", err)
 					return err
@@ -393,7 +392,7 @@ func (s *retryingClientStream) tryStream() error {
 				return err
 			}
 			log.Warn("CloseSend: error", err)
-			return backoff.Permanent(err)
+			return NewPermanentError(err)
 		}
 	}
 	s.stream = stream
@@ -416,4 +415,41 @@ func isRetryable(opts *retryingCallOptions, err error) bool {
 		}
 	}
 	return false
+}
+
+func retryPolicyBuilder(minDelay *time.Duration, maxDelay *time.Duration) retrypolicy.RetryPolicyBuilder[any] {
+	minD := 500 * time.Millisecond
+	if minDelay != nil {
+		minD = *minDelay
+	}
+	maxD := time.Minute
+	if maxDelay != nil {
+		maxD = *maxDelay
+	}
+	return retrypolicy.Builder[any]().
+		AbortOnErrors(&PermanentError{}).
+		WithBackoffFactor(minD, maxD, 1.5).
+		WithJitterFactor(.5).
+		WithMaxDuration(15 * time.Minute)
+}
+
+// PermanentError signals that the operation should not be retried.
+type PermanentError struct {
+	Err error
+}
+
+func (e *PermanentError) Error() string {
+	return e.Err.Error()
+}
+
+func (e *PermanentError) Is(err error) bool {
+	_, ok := err.(*PermanentError)
+	return ok
+}
+
+// NewPermanentError wraps the given err in a *PermanentError.
+func NewPermanentError(err error) *PermanentError {
+	return &PermanentError{
+		Err: err,
+	}
 }
